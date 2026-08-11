@@ -1,0 +1,320 @@
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@500,700,900&f[]=clash-display@500,600,700&display=swap");
+@import "tailwindcss";
+
+/* ─── MODULE 0 — Design System Premium ─── */
+
+:root {
+  --bg-base: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f4f7fb;
+  --border: #d8e0ec;
+  --brand-blue: #1e73be;
+  --brand-blue-600: #155a98;
+  --brand-red: #e0231c;
+  --brand-red-600: #b81912;
+  --accent-glow: #2e9cf0;
+  --text-primary: #0e1116;
+  --text-secondary: #5a6778;
+  --success: #1fbf75;
+  --warning: #f5a623;
+  --grad-brand: linear-gradient(135deg, #1e73be 0%, #2e9cf0 100%);
+  --grad-urgent: linear-gradient(135deg, #e0231c 0%, #ff5b45 100%);
+  --grad-surface: linear-gradient(180deg, rgba(244, 247, 251, 0.9) 0%, rgba(255, 255, 255, 0) 100%);
+  --radius-card: 20px;
+  --radius-input: 14px;
+  --radius-pill: 9999px;
+  --shadow-glow: 0 0 40px rgba(30, 115, 190, 0.12), 0 8px 32px rgba(30, 115, 190, 0.08);
+  --shadow-glow-sm: 0 0 20px rgba(30, 115, 190, 0.1);
+  --shadow-glow-red: 0 0 40px rgba(224, 35, 28, 0.15), 0 8px 32px rgba(224, 35, 28, 0.08);
+  --shadow-card: 0 4px 24px rgba(14, 17, 22, 0.06);
+}
+
+[data-theme="dark"] {
+  --bg-base: #0e1116;
+  --bg-surface: #161b22;
+  --bg-elevated: #1e2530;
+  --border: #263041;
+  --text-primary: #f4f7fb;
+  --text-secondary: #9ba7b8;
+  --grad-surface: linear-gradient(180deg, rgba(30, 37, 48, 0.6) 0%, rgba(14, 17, 22, 0) 100%);
+  --shadow-glow: 0 0 40px rgba(46, 156, 240, 0.25), 0 8px 32px rgba(30, 115, 190, 0.15);
+  --shadow-glow-sm: 0 0 20px rgba(46, 156, 240, 0.2);
+  --shadow-glow-red: 0 0 40px rgba(224, 35, 28, 0.3), 0 8px 32px rgba(224, 35, 28, 0.15);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+@theme inline {
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-border: var(--border);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-600: var(--brand-blue-600);
+  --color-brand-red: var(--brand-red);
+  --color-brand-red-600: var(--brand-red-600);
+  --color-accent-glow: var(--accent-glow);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Clash Display", "Satoshi", ui-sans-serif, sans-serif;
+  --font-body: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --radius-card: var(--radius-card);
+  --radius-input: var(--radius-input);
+  --radius-pill: var(--radius-pill);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typographie géante ─── */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+
+.text-hero {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 11vw, 8.5rem);
+  line-height: 0.9;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+
+.text-display-lg {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  line-height: 0.95;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.text-gradient-brand {
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-urgent {
+  background: var(--grad-urgent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ─── Gradients & surfaces ─── */
+.bg-grad-brand {
+  background: var(--grad-brand);
+}
+
+.bg-grad-urgent {
+  background: var(--grad-urgent);
+}
+
+/* Glassmorphism premium */
+.glass {
+  background: color-mix(in srgb, var(--bg-surface) 65%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.glass-strong {
+  background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid color-mix(in srgb, var(--accent-glow) 15%, var(--border));
+}
+
+/* Carte premium avec bordure gradient */
+.card-premium {
+  position: relative;
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.card-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-glow) 40%, transparent),
+    color-mix(in srgb, var(--border) 80%, transparent) 50%,
+    color-mix(in srgb, var(--brand-blue) 20%, transparent)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glow */
+.glow-blue {
+  box-shadow: var(--shadow-glow);
+}
+
+.glow-blue-sm {
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.glow-red {
+  box-shadow: var(--shadow-glow-red);
+}
+
+/* Fond ambiant — grille + grain */
+.bg-ambient {
+  position: relative;
+  background-color: var(--bg-base);
+}
+
+.bg-ambient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(30, 115, 190, 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(224, 35, 28, 0.06), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 80%, rgba(46, 156, 240, 0.08), transparent);
+  pointer-events: none;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--border) 35%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 35%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent);
+}
+
+/* Grain subtil */
+.noise-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Bouton glow pulse */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(46, 156, 240, 0.2), 0 4px 16px rgba(30, 115, 190, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(46, 156, 240, 0.4), 0 8px 32px rgba(30, 115, 190, 0.2); }
+}
+
+.btn-glow-pulse:hover {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Shimmer skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Marqueur carte — halo pulse */
+@keyframes pulse-halo {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes pulse-halo-delayed {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+.marker-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent-glow);
+  animation: pulse-halo 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.marker-pulse-ring-delayed {
+  animation: pulse-halo-delayed 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: 0.6s;
+}
+
+/* Ligne trajet animée */
+@keyframes draw-route {
+  from { stroke-dashoffset: 200; }
+  to { stroke-dashoffset: 0; }
+}
+
+.route-line {
+  stroke-dasharray: 200;
+  animation: draw-route 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Float léger */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Nav link underline */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--grad-brand);
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-link:hover::after {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton-shimmer, .animate-float, .btn-glow-pulse:hover { animation: none; }
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
