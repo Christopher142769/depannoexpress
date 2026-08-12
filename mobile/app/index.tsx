@@ -7,5 +7,6 @@ export default function Index() {
 
   if (!isReady) return <AuthLoading />;
   if (!user) return <Redirect href="/(auth)/login" />;
+  if (user.role === "pro") return <Redirect href="/(pro-tabs)" />;
   return <Redirect href="/(tabs)" />;
 }

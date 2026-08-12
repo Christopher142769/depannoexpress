@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { Link, router } from "expo-router";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { apiFetch } from "@/lib/api";
-import { APP_NAME, BRAND } from "@/lib/constants";
+import { APP_NAME, BRAND, type UserRole } from "@/lib/constants";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<UserRole>("client");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const isPro = role === "pro";
 
   const submit = async () => {
     setError(null);
@@ -24,7 +27,7 @@ export default function LoginScreen() {
     const res = await apiFetch<{ ok: boolean }>("/api/auth/request-otp", {
       method: "POST",
       auth: false,
-      body: JSON.stringify({ mode: "login", email: trimmed, role: "client" }),
+      body: JSON.stringify({ mode: "login", email: trimmed, role }),
     });
     setLoading(false);
 
@@ -47,7 +50,26 @@ export default function LoginScreen() {
           <Text style={styles.tagline}>Assistance routière au Bénin</Text>
         </View>
 
-        <Card title="Connexion conducteur" subtitle="Code envoyé par e-mail uniquement">
+        {/* Role selector */}
+        <View style={styles.roleRow}>
+          <Pressable
+            style={[styles.roleBtn, !isPro && styles.roleBtnActive]}
+            onPress={() => setRole("client")}
+          >
+            <Text style={[styles.roleTxt, !isPro && styles.roleTxtActive]}>Conducteur</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.roleBtn, isPro && styles.roleBtnActivePro]}
+            onPress={() => setRole("pro")}
+          >
+            <Text style={[styles.roleTxt, isPro && styles.roleTxtActivePro]}>Dépanneur</Text>
+          </Pressable>
+        </View>
+
+        <Card
+          title={isPro ? "Connexion dépanneur" : "Connexion conducteur"}
+          subtitle="Code envoyé par e-mail uniquement"
+        >
           <Input
             label="Adresse e-mail"
             autoCapitalize="none"
@@ -83,6 +105,22 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", paddingVertical: 12, gap: 4 },
   brand: { fontSize: 26, fontWeight: "800", color: BRAND.blue },
   tagline: { fontSize: 14, color: BRAND.gray500 },
+  roleRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  roleBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: BRAND.gray200,
+  },
+  roleBtnActive: { backgroundColor: BRAND.blue },
+  roleBtnActivePro: { backgroundColor: BRAND.red },
+  roleTxt: { fontSize: 15, fontWeight: "600", color: BRAND.gray500 },
+  roleTxtActive: { color: BRAND.white },
+  roleTxtActivePro: { color: BRAND.white },
   footer: { textAlign: "center", color: BRAND.gray500 },
   link: { color: BRAND.blue, fontWeight: "600" },
 });

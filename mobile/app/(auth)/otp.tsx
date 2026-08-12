@@ -42,7 +42,7 @@ export default function OtpScreen() {
     }
 
     await setSession(res.data.user, res.data.token);
-    router.replace("/(tabs)");
+    router.replace(res.data.user.role === "pro" ? "/(pro-tabs)" : "/(tabs)");
   };
 
   const resend = async () => {

@@ -20,6 +20,11 @@ export type Intervention = {
   problem: string;
   clientLocation: GeoPoint | null;
   proLocation: GeoPoint | null;
+  client?: {
+    id?: string;
+    name?: string;
+    phone?: string;
+  } | null;
   pro?: {
     id?: string;
     name?: string;
