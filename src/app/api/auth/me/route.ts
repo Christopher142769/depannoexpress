@@ -1,19 +1,11 @@
-import { connectDB } from "@/server/db/mongodb";
-import { User } from "@/server/db/models";
-import { getSessionFromCookies } from "@/server/auth/session";
-import { toAuthUser } from "@/server/auth/guards";
-import { handleRouteError, jsonError, jsonOk } from "@/server/api/http";
+import { requireSession } from "@/server/auth/guards";
+import { handleRouteError, jsonOk } from "@/server/api/http";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await getSessionFromCookies();
-    if (!session) return jsonError(401, "Non authentifié");
-
-    await connectDB();
-    const userDoc = await User.findById(session.sub);
-    if (!userDoc) return jsonError(401, "Session invalide");
-
-    return jsonOk({ user: toAuthUser(userDoc) });
+    const auth = await requireSession(req);
+    if ("error" in auth) return auth.error;
+    return jsonOk({ user: auth.user });
   } catch (err) {
     return handleRouteError(err);
   }

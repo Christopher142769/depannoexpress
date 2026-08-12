@@ -34,6 +34,22 @@ export async function getSessionFromCookies(): Promise<SessionPayload | null> {
   return verifySessionToken(token);
 }
 
-export function getSessionTokenFromRequest(req: NextRequest): string | undefined {
-  return req.cookies.get(SESSION_COOKIE)?.value;
+/** Cookie (web) ou Authorization: Bearer (app mobile) */
+export function getSessionTokenFromRequest(
+  req: NextRequest | Request
+): string | undefined {
+  const auth = req.headers.get("authorization");
+  if (auth?.startsWith("Bearer ")) {
+    const token = auth.slice(7).trim();
+    if (token) return token;
+  }
+
+  if ("cookies" in req && typeof req.cookies?.get === "function") {
+    return (req as NextRequest).cookies.get(SESSION_COOKIE)?.value;
+  }
+
+  const cookieHeader = req.headers.get("cookie");
+  if (!cookieHeader) return undefined;
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]+)`));
+  return match ? decodeURIComponent(match[1]) : undefined;
 }

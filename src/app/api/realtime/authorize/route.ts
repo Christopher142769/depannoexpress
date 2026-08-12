@@ -13,7 +13,7 @@ const schema = z.object({
 /** Autorise l’abonnement au canal intervention:{id} si l’utilisateur est partie prenante. */
 export async function GET(req: Request) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
 
     const { searchParams } = new URL(req.url);

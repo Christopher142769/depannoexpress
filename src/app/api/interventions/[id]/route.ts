@@ -27,9 +27,9 @@ const patchSchema = z.object({
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: Request, ctx: Ctx) {
+export async function GET(req: Request, ctx: Ctx) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
     const { id } = await ctx.params;
 
@@ -71,7 +71,7 @@ function serializeId(
 
 export async function PATCH(req: Request, ctx: Ctx) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
     const { id } = await ctx.params;
     const body = patchSchema.parse(await req.json());

@@ -30,7 +30,7 @@ const schema = z.discriminatedUnion("type", [
 
 export async function POST(req: Request) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
 
     const body = schema.parse(await req.json());

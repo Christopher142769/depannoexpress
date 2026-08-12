@@ -8,9 +8,9 @@ import { USER_ROLES } from "@/lib/constants";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function POST(_req: Request, ctx: Ctx) {
+export async function POST(req: Request, ctx: Ctx) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
     const forbidden = requireRole(auth.user, [USER_ROLES.PRO]);
     if (forbidden) return forbidden;

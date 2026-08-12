@@ -18,7 +18,7 @@ const createSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
     const forbidden = requireRole(auth.user, [USER_ROLES.CLIENT]);
     if (forbidden) return forbidden;
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
     const forbidden = requireRole(auth.user, [USER_ROLES.CLIENT]);
     if (forbidden) return forbidden;

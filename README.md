@@ -77,3 +77,22 @@ Les canaux `intervention:{id}` transportent GPS, chat et changements de statut. 
 npm run test
 npm run test:e2e   # nécessite Mongo + app (webServer Playwright)
 ```
+
+## App mobile (React Native / Expo)
+
+Client iOS & Android dans `mobile/` — auth OTP par e-mail, token JWT en `Authorization: Bearer` (stocké via `expo-secure-store`).
+
+```bash
+# Terminal 1 — API Next.js (accessible sur le réseau local)
+npm run dev
+
+# Terminal 2 — Expo
+cd mobile
+cp .env.example .env
+# Sur appareil physique : EXPO_PUBLIC_API_URL=http://<IP_LAN>:3000
+npm start
+```
+
+Écrans : connexion / inscription → OTP → accueil (signaler panne + carte) + boutique catalogue.
+
+Compte démo : `client.demo@depannage-express.bj` — le code OTP apparaît dans le terminal Next si `EMAIL_PROVIDER=console`.

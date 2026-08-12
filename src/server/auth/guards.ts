@@ -34,7 +34,7 @@ export function toAuthUser(user: {
 }
 
 export async function requireSession(
-  req?: NextRequest
+  req?: NextRequest | Request
 ): Promise<{ session: SessionPayload; user: AuthUser } | { error: Response }> {
   await connectDB();
 

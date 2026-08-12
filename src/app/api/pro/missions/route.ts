@@ -5,9 +5,9 @@ import { handleRouteError, jsonOk } from "@/server/api/http";
 import { serializeIntervention } from "@/server/api/serialize";
 import { NEARBY_RADIUS_KM, USER_ROLES } from "@/lib/constants";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if ("error" in auth) return auth.error;
     const forbidden = requireRole(auth.user, [USER_ROLES.PRO]);
     if (forbidden) return forbidden;

@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       role: user.role,
     });
 
-    const res = NextResponse.json({ user });
+    const res = NextResponse.json({ user, token });
     applySessionCookie(res, token);
     return res;
   } catch (err) {
