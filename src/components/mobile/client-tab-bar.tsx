@@ -1,0 +1,44 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Home, ShoppingBag } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const TABS = [
+  { href: "/app", label: "Accueil", icon: Home, exact: true },
+  { href: "/app/boutique", label: "Boutique", icon: ShoppingBag, exact: false },
+] as const;
+
+export function ClientTabBar() {
+  const pathname = usePathname();
+
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-bg-surface/92 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
+      aria-label="Navigation principale"
+    >
+      <div className="flex items-stretch justify-around max-w-lg mx-auto">
+        {TABS.map((tab) => {
+          const active = tab.exact
+            ? pathname === tab.href
+            : pathname.startsWith(tab.href);
+          const Icon = tab.icon;
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={cn(
+                "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
+                active ? "text-brand-blue" : "text-text-secondary"
+              )}
+            >
+              <Icon className={cn("h-5 w-5", active && "scale-105")} strokeWidth={active ? 2.4 : 2} />
+              {tab.label}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}

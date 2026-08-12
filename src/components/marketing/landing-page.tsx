@@ -2,9 +2,16 @@
 
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import "@/styles/landing.css";
 import { useLandingEffects } from "@/hooks/use-landing-effects";
+import { useLandingScroll } from "@/hooks/use-landing-scroll";
 import { LANDING_ROUTES } from "@/lib/landing-routes";
+import { LANDING_NAV_LINKS } from "@/lib/landing-nav";
+import { BOUTIQUE_PRODUCTS } from "@/lib/boutique-products";
+import { TRADE_PROFILES } from "@/lib/trade-profiles";
+import { HOW_IT_WORKS_STEPS } from "@/lib/how-it-works-steps";
+import { LandingTrackMapLazy } from "@/components/maps/landing-track-map-lazy";
 
 const ARROW_RED = (
   <svg viewBox="0 0 24 24" fill="none" stroke="#e0231c" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -74,7 +81,11 @@ function CtaAuthBlock({
 /** Landing page — conversion exacte de depannage-express-landing.html */
 export function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const heroCopyRef = useRef<HTMLDivElement>(null);
+  const figureRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { scrolled } = useLandingScroll({ heroRef, heroCopyRef, figureRef });
   useLandingEffects(rootRef);
 
   useEffect(() => {
@@ -87,69 +98,104 @@ export function LandingPage() {
 
   return (
     <div className="landing-root" ref={rootRef}>
-      {/* HERO */}
-      <section className="hero">
-        <nav className="nav">
-          <Link href="/" className="brand-mark" aria-hidden="true">{BRAND_SVG}</Link>
-          <Link href="/" className="brand-name" style={{ textDecoration: "none", color: "inherit" }}>
-            Dépannage Express
+      <header className={`nav-shell${scrolled ? " is-scrolled" : ""}`}>
+        <nav className="nav" aria-label="Navigation principale">
+          <Link href="/" className="brand-lockup">
+            <span className="brand-mark" aria-hidden="true">
+              <Image src="/logo-mark.png" alt="" width={80} height={80} priority />
+            </span>
+            <span className="brand-name">Dépannage Express</span>
           </Link>
-          <div className="nav-wrap">
-            <button
-              type="button"
-              className="nav-menu"
-              aria-label="Menu"
-              aria-expanded={menuOpen}
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen((o) => !o);
-              }}
-            >
-              <span /><span /><span />
-            </button>
-            {menuOpen && (
-              <div className="nav-panel" onClick={(e) => e.stopPropagation()}>
-                <a href="#comment" onClick={() => setMenuOpen(false)}>Comment ça marche</a>
-                <a href="#metiers" onClick={() => setMenuOpen(false)}>Nos métiers</a>
-                <a href="#suivi" onClick={() => setMenuOpen(false)}>Suivi en direct</a>
-                <a href="#boutique" onClick={() => setMenuOpen(false)}>Boutique</a>
-                <a href="#pro" onClick={() => setMenuOpen(false)}>Devenir dépanneur</a>
-                <div className="nav-panel-divider" />
-                <p className="nav-panel-label">Conducteur</p>
-                <Link href={LANDING_ROUTES.clientSignup} onClick={() => setMenuOpen(false)}>S&apos;inscrire</Link>
-                <Link href={LANDING_ROUTES.clientLogin} onClick={() => setMenuOpen(false)}>Se connecter</Link>
-                <div className="nav-panel-divider" />
-                <p className="nav-panel-label">Dépanneur</p>
-                <Link href={LANDING_ROUTES.proSignup} onClick={() => setMenuOpen(false)}>S&apos;inscrire</Link>
-                <Link href={LANDING_ROUTES.proLogin} onClick={() => setMenuOpen(false)}>Se connecter</Link>
-              </div>
-            )}
+
+          <ul className="nav-links">
+            {LANDING_NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <a href={link.href} className="nav-link-item">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          <div className="nav-actions">
+            <Link href={LANDING_ROUTES.clientSignup} className="nav-cta">
+              S&apos;inscrire
+            </Link>
+            <div className="nav-wrap">
+              <button
+                type="button"
+                className="nav-menu"
+                aria-label="Menu"
+                aria-expanded={menuOpen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen((o) => !o);
+                }}
+              >
+                <span /><span /><span />
+              </button>
+              {menuOpen && (
+                <div className="nav-panel" onClick={(e) => e.stopPropagation()}>
+                  {LANDING_NAV_LINKS.map((link) => (
+                    <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>
+                      {link.label}
+                    </a>
+                  ))}
+                  <a href="#pro" onClick={() => setMenuOpen(false)}>Devenir dépanneur</a>
+                  <div className="nav-panel-divider" />
+                  <p className="nav-panel-label">Conducteur</p>
+                  <Link href={LANDING_ROUTES.clientSignup} onClick={() => setMenuOpen(false)}>S&apos;inscrire</Link>
+                  <Link href={LANDING_ROUTES.clientLogin} onClick={() => setMenuOpen(false)}>Se connecter</Link>
+                  <div className="nav-panel-divider" />
+                  <p className="nav-panel-label">Dépanneur</p>
+                  <Link href={LANDING_ROUTES.proSignup} onClick={() => setMenuOpen(false)}>S&apos;inscrire</Link>
+                  <Link href={LANDING_ROUTES.proLogin} onClick={() => setMenuOpen(false)}>Se connecter</Link>
+                </div>
+              )}
+            </div>
           </div>
         </nav>
+      </header>
 
-        <div className="figure-wrap">
-          <img
-            id="hero-photo"
-            src="/hero-mecano.png"
-            alt="Mécanicien Dépannage Express"
-          />
+      {/* HERO */}
+      <section className="hero" ref={heroRef}>
+        <div className="hero-ambient" aria-hidden="true">
+          <span className="orb orb-a" />
+          <span className="orb orb-b" />
+          <span className="orb orb-c" />
         </div>
 
-        <div className="hero-content">
-          <div className="hero-left">
-            <div className="badge"><span className="dot" /> Disponible 24/7</div>
+        <div className="hero-inner">
+          <div className="hero-copy" ref={heroCopyRef}>
+            <div className="badge"><span className="dot" /> Disponible 24 h/24</div>
             <h1 className="headline">
               <span className="line"><span>En panne ?</span></span>
               <span className="line"><span>Le dépanneur</span></span>
-              <span className="line"><span>est <span className="em">déjà en route.</span></span></span>
+              <span className="line"><span>est déjà en route.</span></span>
             </h1>
-          </div>
-          <div className="hero-right">
-            <p>Mécanicien, vulcanisateur ou électricien auto — <b>Dépannage Express</b> vous connecte au pro le plus proche, et vous le suivez en direct jusqu&apos;à votre arrivée.</p>
+            <p className="hero-lead">
+              Mécanicien, vulcanisateur ou électricien automobile —{" "}
+              <strong>Dépannage Express</strong> vous connecte au professionnel le plus proche.
+              Suivez-le en direct jusqu&apos;à son arrivée.
+            </p>
             <CtaAuthBlock
               signupHref={LANDING_ROUTES.clientSignup}
               loginHref={LANDING_ROUTES.clientLogin}
             />
+          </div>
+
+          <div className="figure-wrap" ref={figureRef}>
+            <div className="figure-inner">
+              <Image
+                id="hero-photo"
+                src="/hero-mecano.png"
+                alt="Mécanicien Dépannage Express"
+                fill
+                priority
+                sizes="(max-width: 860px) 88vw, 42vw"
+                className="object-contain object-bottom"
+              />
+            </div>
           </div>
         </div>
 
@@ -164,27 +210,27 @@ export function LandingPage() {
               <span className="eyebrow">Comment ça marche</span>
               <h2 className="sec-title">Dépanné en <span className="em">trois étapes.</span></h2>
             </div>
-            <p>Pas d&apos;attente interminable au bord de la route. Vous signalez, le pro arrive, vous suivez tout en direct.</p>
+            <p>Pas d&apos;attente interminable au bord de la route. Vous signalez, le dépanneur arrive, vous suivez tout en direct.</p>
           </div>
           <div className="steps">
-            <article className="step reveal">
-              <span className="num">01</span>
-              <span className="s-icon"><svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /><circle cx="12" cy="12" r="4" /></svg></span>
-              <h3>Signalez votre panne</h3>
-              <p>Choisissez le type de problème, puis décrivez-le par message écrit ou vocal. Le pro sait s&apos;il peut intervenir.</p>
-            </article>
-            <article className="step reveal">
-              <span className="num">02</span>
-              <span className="s-icon"><svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg></span>
-              <h3>Le pro le plus proche répond</h3>
-              <p>Grâce à la géolocalisation, le dépanneur le plus proche reçoit l&apos;alerte, accepte la mission et prend la route.</p>
-            </article>
-            <article className="step reveal">
-              <span className="num">03</span>
-              <span className="s-icon"><svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z" /></svg></span>
-              <h3>Suivez-le en direct</h3>
-              <p>Position en temps réel, temps d&apos;arrivée estimé, et un appel ou un message WhatsApp à portée de doigt.</p>
-            </article>
+            {HOW_IT_WORKS_STEPS.map((item) => (
+              <article key={item.slug} className="step reveal">
+                <div className="step-visual">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.title}
+                    width={960}
+                    height={540}
+                    sizes="(max-width: 980px) 50vw, 33vw"
+                  />
+                  <span className="num">{item.step}</span>
+                </div>
+                <div className="step-body">
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -197,21 +243,23 @@ export function LandingPage() {
             <h2 className="sec-title">Un expert pour <span className="em">chaque panne.</span></h2>
           </div>
           <div className="trades">
-            <article className="trade red reveal">
-              <span className="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2-2 2.6-2.6z" /></svg></span>
-              <h3>Mécanicien</h3>
-              <p>Panne moteur, démarrage, freinage, fuites… Un mécanicien diagnostique et répare sur place ou vous remorque.</p>
-            </article>
-            <article className="trade blue reveal">
-              <span className="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.2" /></svg></span>
-              <h3>Vulcanisateur</h3>
-              <p>Pneu crevé, jante voilée, pression à régler ? Le spécialiste pneus intervient vite et vous remet sur la route.</p>
-            </article>
-            <article className="trade mix reveal">
-              <span className="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" /></svg></span>
-              <h3>Électricien auto</h3>
-              <p>Batterie à plat, alternateur, faisceau, démarreur… L&apos;électricien auto remet le courant et relance votre véhicule.</p>
-            </article>
+            {TRADE_PROFILES.map((trade) => (
+              <article key={trade.slug} className={`trade ${trade.accent} reveal`}>
+                <div className="trade-visual">
+                  <Image
+                    src={trade.imageUrl}
+                    alt={trade.title}
+                    width={960}
+                    height={540}
+                    sizes="(max-width: 980px) 50vw, 33vw"
+                  />
+                </div>
+                <div className="trade-body">
+                  <h3>{trade.title}</h3>
+                  <p>{trade.description}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -222,10 +270,10 @@ export function LandingPage() {
           <div className="live-text reveal">
             <span className="eyebrow">Suivi en direct</span>
             <h2 className="sec-title">Vous voyez votre dépanneur <span className="em">arriver.</span></h2>
-            <p>Comme pour une course, suivez la position de votre pro sur la carte, minute par minute, jusqu&apos;à ce qu&apos;il soit à vos côtés.</p>
+            <p>Comme pour une course, suivez la position de votre dépanneur sur la carte, minute par minute, jusqu&apos;à ce qu&apos;il soit à vos côtés.</p>
             <ul className="live-list">
-              <li><span className="chk"><svg viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span> Position et temps d&apos;arrivée mis à jour en temps réel</li>
-              <li><span className="chk"><svg viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span> Appel direct ou WhatsApp en un seul tap</li>
+              <li><span className="chk"><svg viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span> Position et heure d&apos;arrivée mises à jour en direct</li>
+              <li><span className="chk"><svg viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span> Appel direct ou WhatsApp en un seul clic</li>
               <li><span className="chk"><svg viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span> Notez l&apos;intervention une fois terminée</li>
             </ul>
             <CtaAuthBlock
@@ -234,12 +282,16 @@ export function LandingPage() {
               blue
             />
           </div>
-          <div className="map-card reveal">
-            <div className="map-grid" />
-            <svg className="route" viewBox="0 0 400 340" preserveAspectRatio="none"><path d="M88 265 C 150 230, 150 160, 230 130 C 270 115, 250 110, 256 102" /></svg>
-            <span className="pin start" />
-            <span className="pin driver" />
-            <div className="eta-chip">
+          <div className="map-float reveal">
+            <div className="map-card">
+              <div className="map-status">
+                <span className="map-live-dot" />
+                Suivi en direct
+                <span className="map-status-eta">4 min</span>
+              </div>
+              <LandingTrackMapLazy />
+              <div className="map-vignette" aria-hidden="true" />
+              <div className="eta-chip">
               <span className="av">{BRAND_SVG}</span>
               <div className="meta"><strong>Koffi, mécanicien</strong><span>★ 4,9 · à 1,2 km</span></div>
               <div className="mini-actions">
@@ -247,6 +299,7 @@ export function LandingPage() {
                 <Link href={LANDING_ROUTES.clientSignup} className="wa" aria-label="S'inscrire pour WhatsApp"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.1 7.6L3 21l1.9-5.7A8.4 8.4 0 1 1 21 11.5Z" /></svg></Link>
               </div>
               <div className="eta">4 min</div>
+            </div>
             </div>
           </div>
         </div>
@@ -281,13 +334,34 @@ export function LandingPage() {
         <div className="wrap">
           <div className="reveal">
             <span className="eyebrow">La boutique</span>
-            <h2 className="sec-title">Pneus, pièces & <span className="em">accessoires.</span></h2>
+            <h2 className="sec-title">Pneus, pièces et <span className="em">accessoires.</span></h2>
           </div>
           <div className="shop-grid">
-            <Link href={LANDING_ROUTES.clientSignup} className="product reveal"><div className="ph"><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.5" /></svg></div><div className="info"><span className="cat">Pneus</span><h4>Pneu tourisme</h4><div className="price">35 000 F <em>/ unité</em></div></div></Link>
-            <Link href={LANDING_ROUTES.clientSignup} className="product reveal"><div className="ph"><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6"><circle cx="12" cy="12" r="8" /><path d="M12 4v3M12 17v3M4 12h3M17 12h3" /></svg></div><div className="info"><span className="cat">Freinage</span><h4>Plaquettes de frein</h4><div className="price">18 500 F <em>/ jeu</em></div></div></Link>
-            <Link href={LANDING_ROUTES.clientSignup} className="product reveal"><div className="ph"><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6"><rect x="3" y="7" width="18" height="11" rx="2" /><path d="M7 7V5M17 7V5M8 12h3M16 12h-1" /></svg></div><div className="info"><span className="cat">Électrique</span><h4>Batterie 12V</h4><div className="price">62 000 F <em>/ unité</em></div></div></Link>
-            <Link href={LANDING_ROUTES.clientSignup} className="product reveal"><div className="ph"><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6"><path d="M3 13l2-5h14l2 5M5 13h14v5H5z" /><circle cx="8" cy="18" r="1.5" /><circle cx="16" cy="18" r="1.5" /></svg></div><div className="info"><span className="cat">Accessoires</span><h4>Kit d&apos;urgence route</h4><div className="price">9 900 F <em>/ pack</em></div></div></Link>
+            {BOUTIQUE_PRODUCTS.map((item) => (
+              <Link
+                key={item.slug}
+                href={LANDING_ROUTES.clientSignup}
+                className="product reveal"
+              >
+                <div className="ph">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.name}
+                    width={480}
+                    height={480}
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                  />
+                </div>
+                <div className="info">
+                  <span className="cat">{item.categoryLabel}</span>
+                  <h4>{item.name}</h4>
+                  <div className="price">
+                    {item.price.toLocaleString("fr-FR")} F{" "}
+                    <em>/ {item.priceUnit}</em>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -346,10 +420,14 @@ export function LandingPage() {
           <div className="foot-grid">
             <div className="foot-brand">
               <div className="fb-row">
-                <span className="brand-mark" aria-hidden="true">{BRAND_SVG}</span>
-                <span className="brand-name">Dépannage Express</span>
+                <Link href="/" className="brand-lockup">
+                  <span className="brand-mark" aria-hidden="true">
+                    <Image src="/logo-mark.png" alt="" width={80} height={80} />
+                  </span>
+                  <span className="brand-name">Dépannage Express</span>
+                </Link>
               </div>
-              <p>L&apos;assistance routière rapide & fiable, 24h/24. Le bon pro, au bon endroit, en quelques minutes.</p>
+              <p>L&apos;assistance routière rapide et fiable, 24 h/24. Le bon professionnel, au bon endroit, en quelques minutes.</p>
               <div className="socials">
                 <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></a>
                 <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><svg viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.1 7.6L3 21l1.9-5.7A8.4 8.4 0 1 1 21 11.5Z" /></svg></a>

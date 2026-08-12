@@ -12,6 +12,12 @@ export const OTP_EXPIRY_MINUTES = 10;
 /** Longueur du code OTP */
 export const OTP_LENGTH = 6;
 
+/** Commission plateforme prélevée sur le prix final (%) */
+export const COMMISSION_RATE_PERCENT = 15;
+
+/** Rayon de recherche dépanneurs / missions (km) */
+export const NEARBY_RADIUS_KM = 15;
+
 /** Rôles utilisateur */
 export const USER_ROLES = {
   CLIENT: "client",

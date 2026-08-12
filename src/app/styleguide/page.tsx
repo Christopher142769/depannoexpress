@@ -32,7 +32,7 @@ import { RatingStars } from "@/components/ui/rating-stars";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OTPInput } from "@/components/ui/otp-input";
 import { toast } from "@/components/ui/toast";
-import { staggerContainer, staggerItem } from "@/lib/animations";
+import { staggerContainer } from "@/lib/animations";
 
 function Section({
   title,

@@ -3,10 +3,10 @@
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 /** Toast notifications — wrapper Sonner avec thème Dépannage Express */
-function Toaster({ ...props }: ToasterProps) {
+function Toaster({ theme = "light", ...props }: ToasterProps) {
   return (
     <Sonner
-      theme="dark"
+      theme={theme}
       className="toaster group"
       toastOptions={{
         classNames: {

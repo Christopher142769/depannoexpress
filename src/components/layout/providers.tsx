@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toast";
+import { AuthBootstrap } from "@/components/auth/auth-bootstrap";
 import { useThemeStore } from "@/stores/theme-store";
 
 const queryClient = new QueryClient({
@@ -14,7 +15,7 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Providers globaux : React Query, thème, toasts */
+/** Providers globaux : React Query, thème, toasts, session */
 export function Providers({ children }: { children: React.ReactNode }) {
   const theme = useThemeStore((s) => s.theme);
 
@@ -25,8 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthBootstrap />
       {children}
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster theme={theme} position="top-right" richColors closeButton />
     </QueryClientProvider>
   );
 }

@@ -67,10 +67,22 @@ class ResendEmailService implements EmailService {
   }
 }
 
+/** Provider console — développement sans SMTP (n'expose jamais le code en HTTP) */
+class ConsoleEmailService implements EmailService {
+  async send(options: SendEmailOptions): Promise<void> {
+    console.info("[email:console]", {
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+    });
+  }
+}
+
 /** Factory — choisit le provider selon EMAIL_PROVIDER */
 export function createEmailService(): EmailService {
   const provider = process.env.EMAIL_PROVIDER ?? "nodemailer";
   if (provider === "resend") return new ResendEmailService();
+  if (provider === "console") return new ConsoleEmailService();
   return new NodemailerEmailService();
 }
 

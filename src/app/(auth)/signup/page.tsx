@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Logo } from "@/components/brand/logo";
 import { APP_NAME } from "@/lib/constants";
+import { toast } from "@/components/ui/toast";
 import { type AuthRole } from "@/lib/landing-routes";
 
 const schema = z.object({
@@ -26,6 +28,7 @@ function parseRole(value: string | null): AuthRole {
 }
 
 function SignupForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const role = parseRole(searchParams.get("role"));
   const isPro = role === "pro";
@@ -37,19 +40,39 @@ function SignupForm() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
-    const params = new URLSearchParams({
-      email: data.email,
-      role,
-      name: data.name,
-    });
-    window.location.href = `/otp?${params.toString()}`;
+    try {
+      const res = await fetch("/api/auth/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "signup",
+          email: data.email,
+          role,
+          name: data.name,
+          phone: data.phone,
+        }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        toast.error(payload.error ?? "Impossible de créer le compte");
+        return;
+      }
+      toast.success("Code envoyé par e-mail");
+      const params = new URLSearchParams({
+        email: data.email,
+        role,
+      });
+      router.push(`/otp?${params.toString()}`);
+    } catch {
+      toast.error("Erreur réseau. Réessayez.");
+    }
   };
 
   return (
     <Card>
       <CardHeader className="text-center">
-        <Link href="/" className="mx-auto mb-4 block">
-          <img src="/logo.svg" alt={APP_NAME} width={120} height={30} className="mx-auto h-8 w-auto" />
+        <Link href="/" className="mx-auto mb-4 block w-fit">
+          <Logo className="mx-auto" />
         </Link>
         <CardTitle>{isPro ? "Devenir dépanneur" : "Inscription conducteur"}</CardTitle>
         <CardDescription>

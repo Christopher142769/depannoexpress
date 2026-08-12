@@ -1,0 +1,19 @@
+{
+  "name": "Dépannage Express",
+  "short_name": "Dépannage",
+  "description": "Assistance routière au Bénin",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e73be",
+  "lang": "fr",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

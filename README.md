@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dépannage Express
 
-## Getting Started
+Plateforme d’assistance routière au Bénin : le conducteur signale une panne, le dépanneur le plus proche est alerté, suivi live sur carte + chat.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router) · React 19 · TypeScript strict · Tailwind v4
+- MongoDB / Mongoose · Zustand · Framer Motion · Leaflet
+- Auth e-mail OTP (jamais SMS) · JWT cookie `de-session` (`jose`)
+- Temps réel : **Supabase Realtime** (`NEXT_PUBLIC_REALTIME_PROVIDER=supabase`)
+
+## Démarrage local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
+# Renseigner au minimum : MONGODB_URI, SESSION_SECRET
+# Optionnel realtime : NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+
+# MongoDB local (Docker)
+docker compose up -d
+
+npm install
+npm run seed          # données de démo
+npm run dev           # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Avec `EMAIL_PROVIDER=console`, le code OTP s’affiche dans le terminal du serveur (jamais dans la réponse HTTP).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Comptes seed
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Rôle   | E-mail                              |
+|--------|-------------------------------------|
+| Client | `client.demo@depannage-express.bj`  |
+| Pro    | `pro.demo@depannage-express.bj`     |
+| Admin  | `admin.demo@depannage-express.bj`   |
 
-## Learn More
+## Variables d’environnement
 
-To learn more about Next.js, take a look at the following resources:
+Voir [`.env.example`](./.env.example) pour la liste complète.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Principales :
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `MONGODB_URI` — base Mongo
+- `SESSION_SECRET` — secret JWT (≥ 16 caractères)
+- `EMAIL_PROVIDER` — `console` | `nodemailer` | `resend`
+- `NEXT_PUBLIC_REALTIME_PROVIDER=supabase`
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Serveur de développement |
+| `npm run build` / `start` | Build & prod |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run test` | Vitest (unitaires) |
+| `npm run test:e2e` | Playwright (parcours critiques) |
+| `npm run mongo` | Démarre Mongo via Docker Compose |
+| `npm run seed` | Peuple Mongo avec données démo |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture utile
+
+- Landing : `src/components/marketing/` (ne pas réécrire sans besoin)
+- UI : `src/components/ui/`
+- API : `src/app/api/`
+- Modèles : `src/server/db/models/`
+- Maquettes HTML : `design-reference/`
+
+## Temps réel (Option B)
+
+Les canaux `intervention:{id}` transportent GPS, chat et changements de statut. L’abonnement est autorisé via `/api/realtime/authorize` ; les publications sensibles passent par `/api/realtime/publish` (service role). Sans clés Supabase, l’UI reste en polling.
+
+## Tests
+
+```bash
+npm run test
+npm run test:e2e   # nécessite Mongo + app (webServer Playwright)
+```

@@ -39,6 +39,7 @@ export function useLandingEffects(rootRef: React.RefObject<HTMLElement | null>) 
         entries.forEach((e) => {
           if (!e.isIntersecting) return;
           const el = e.target as HTMLElement;
+          const stat = el.closest(".stat");
           const target = parseFloat(el.dataset.target ?? "0");
           const dec = el.dataset.decimal === "true";
           const suffix = el.dataset.suffix ?? "";
@@ -52,7 +53,11 @@ export function useLandingEffects(rootRef: React.RefObject<HTMLElement | null>) 
             el.textContent = dec
               ? (v / 10).toFixed(1).replace(".", ",") + suffix
               : Math.round(v).toLocaleString("fr-FR") + suffix;
-            if (p < 1) requestAnimationFrame(tick);
+            if (p < 1) {
+              requestAnimationFrame(tick);
+            } else {
+              stat?.classList.add("counted");
+            }
           };
           requestAnimationFrame(tick);
           countIO.unobserve(el);

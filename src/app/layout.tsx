@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Providers } from "@/components/layout/providers";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
+import { clashDisplay, satoshi } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +10,19 @@ export const metadata: Metadata = {
     template: `%s | ${APP_NAME}`,
   },
   description: APP_TAGLINE,
-  icons: { icon: "/logo.svg" },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_NAME,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#1e73be",
 };
 
 export default function RootLayout({
@@ -20,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className="h-full"
+      className={`h-full ${satoshi.variable} ${clashDisplay.variable}`}
       data-theme="light"
       data-scroll-behavior="smooth"
       suppressHydrationWarning

@@ -13,12 +13,12 @@ export function useCountUp(
   enabled = true
 ): number {
   const reducedMotion = useReducedMotion();
-  const [value, setValue] = useState(enabled && !reducedMotion ? 0 : target);
+  const [value, setValue] = useState(0);
 
   useEffect(() => {
     if (!enabled || reducedMotion) {
-      setValue(target);
-      return;
+      const id = requestAnimationFrame(() => setValue(target));
+      return () => cancelAnimationFrame(id);
     }
 
     let start: number | null = null;
@@ -27,7 +27,6 @@ export function useCountUp(
     const step = (timestamp: number) => {
       if (!start) start = timestamp;
       const progress = Math.min((timestamp - start) / duration, 1);
-      // Easing ease-out
       const eased = 1 - Math.pow(1 - progress, 3);
       setValue(Math.floor(eased * target));
 
@@ -40,5 +39,5 @@ export function useCountUp(
     return () => cancelAnimationFrame(raf);
   }, [target, duration, enabled, reducedMotion]);
 
-  return value;
+  return !enabled || reducedMotion ? target : value;
 }
