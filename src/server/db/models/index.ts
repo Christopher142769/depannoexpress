@@ -7,6 +7,8 @@ export type {
   DbProduct,
   DbWallet,
   DbWalletTransaction,
+  DbTrade,
+  DbPricingRule,
   InterventionStatus,
   WalletTxType,
   PopulatedIntervention,

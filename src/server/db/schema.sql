@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone TEXT,
   password_hash TEXT,
   role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('client', 'pro', 'admin', 'super_admin')),
-  specialty TEXT CHECK (specialty IN ('mecanicien', 'vulcanisateur', 'electricien')),
+  specialty TEXT,
   avatar_url TEXT,
   is_verified BOOLEAN NOT NULL DEFAULT false,
   is_available BOOLEAN NOT NULL DEFAULT false,
@@ -108,6 +108,50 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_wallet_tx_user_created ON wallet_transactions(user_id, created_at DESC);
+
+-- ============================================================
+-- TRADES (métiers dynamiques)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS trades (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  icon TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TRIGGER tr_trades_updated_at BEFORE UPDATE ON trades
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Seed initial trades
+INSERT INTO trades (name, slug, icon) VALUES
+  ('Mécanicien', 'mecanicien', 'Wrench'),
+  ('Vulcanisateur', 'vulcanisateur', 'Circle'),
+  ('Électricien auto', 'electricien', 'Zap')
+ON CONFLICT (slug) DO NOTHING;
+
+-- ============================================================
+-- PRICING RULES (tarification admin)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS pricing_rules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trade_id UUID NOT NULL REFERENCES trades(id) ON DELETE CASCADE,
+  base_price NUMERIC NOT NULL CHECK (base_price > 0),
+  price_per_km NUMERIC DEFAULT 0 CHECK (price_per_km >= 0),
+  currency TEXT NOT NULL DEFAULT 'XOF',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  updated_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX idx_pricing_rules_trade_active ON pricing_rules(trade_id) WHERE is_active = true;
+CREATE TRIGGER tr_pricing_rules_updated_at BEFORE UPDATE ON pricing_rules
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ============================================================
 -- FUNCTIONS

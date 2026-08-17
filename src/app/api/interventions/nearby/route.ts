@@ -8,7 +8,7 @@ import { NEARBY_RADIUS_KM, USER_ROLES } from "@/lib/constants";
 const querySchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
-  specialty: z.enum(["mecanicien", "vulcanisateur", "electricien"]).optional(),
+  specialty: z.string().max(100).optional(),
   radiusKm: z.coerce.number().min(1).max(50).optional(),
 });
 

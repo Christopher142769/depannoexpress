@@ -21,13 +21,19 @@ export async function GET(req: Request) {
       .single();
 
     if (!pro?.location) {
-      return jsonOk({ missions: [], message: "Activez votre localisation d'abord" });
+      return jsonOk({ missions: [], active: null, available: pro?.is_available ?? false, message: "Activez votre localisation d'abord" });
     }
+
+    // Extract lat/lng from PostGIS POINT
+    const locStr = pro.location as string;
+    const match = locStr.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/);
+    const lng = match ? parseFloat(match[1]) : 0;
+    const lat = match ? parseFloat(match[2]) : 0;
 
     // Find nearby pending missions
     const { data: missions } = await supabase.rpc("find_nearby_missions", {
-      lng: 0,
-      lat: 0,
+      lng,
+      lat,
       radius_meters: NEARBY_RADIUS_KM * 1000,
     });
 
@@ -48,6 +54,7 @@ export async function GET(req: Request) {
       missions: (missions ?? []).map((m: Record<string, unknown>) => serializeIntervention(m as Parameters<typeof serializeIntervention>[0])),
       active: active ? serializeIntervention(active) : null,
       available: pro.is_available,
+      location: { lat, lng },
     });
   } catch (err) {
     return handleRouteError(err);

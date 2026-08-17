@@ -9,7 +9,7 @@ const schema = z.object({
   isAvailable: z.boolean(),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
-  specialty: z.enum(["mecanicien", "vulcanisateur", "electricien"]).optional(),
+  specialty: z.string().max(100).optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -21,6 +21,16 @@ export async function PATCH(req: Request) {
 
     const body = schema.parse(await req.json());
     const supabase = getSupabaseAdmin();
+
+    if (body.specialty) {
+      const { data: trade } = await supabase
+        .from("trades")
+        .select("id")
+        .eq("slug", body.specialty)
+        .eq("is_active", true)
+        .single();
+      if (!trade) return jsonError(400, "Métier inconnu ou inactif");
+    }
 
     const { data: pro } = await supabase
       .from("users")
@@ -50,12 +60,17 @@ export async function PATCH(req: Request) {
       .select("id, is_available, specialty, location")
       .single();
 
+    const locStr = updated!.location as string | null;
+    let parsedLocation: { lat: number; lng: number } | null = null;
+    if (locStr) {
+      const match = locStr.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/);
+      if (match) parsedLocation = { lng: parseFloat(match[1]), lat: parseFloat(match[2]) };
+    }
+
     return jsonOk({
       isAvailable: updated!.is_available,
       specialty: updated!.specialty,
-      location: updated!.location
-        ? { lng: 0, lat: 0 }
-        : null,
+      location: parsedLocation,
     });
   } catch (err) {
     if (err instanceof ZodError) return fromZodError(err);

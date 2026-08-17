@@ -124,7 +124,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
         if (next === INTERVENTION_STATUS.COMPLETED) {
           updates.completed_at = new Date().toISOString();
           updates.final_price =
-            body.finalPrice ?? doc.estimated_price ?? doc.final_price ?? 5000;
+            body.finalPrice ?? doc.estimated_price ?? doc.final_price;
           if (doc.pro_id) {
             await creditProOnCompletion({
               proId: doc.pro_id,

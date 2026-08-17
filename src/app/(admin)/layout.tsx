@@ -4,6 +4,8 @@ import { LANDING_ROUTES } from "@/lib/landing-routes";
 
 const NAV = [
   { href: LANDING_ROUTES.adminApp, label: "Tableau de bord", exact: true },
+  { href: "/admin/trades", label: "Métiers", exact: true },
+  { href: "/admin/pricing", label: "Tarification", exact: true },
 ];
 
 export default function AdminGroupLayout({

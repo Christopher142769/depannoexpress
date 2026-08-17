@@ -110,3 +110,25 @@ export interface PopulatedIntervention extends DbIntervention {
   client?: { id: string; name: string; phone: string | null } | null;
   pro?: { id: string; name: string; phone: string | null; specialty: string | null } | null;
 }
+
+export interface DbTrade {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbPricingRule {
+  id: string;
+  trade_id: string;
+  base_price: number;
+  price_per_km: number;
+  currency: string;
+  is_active: boolean;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}

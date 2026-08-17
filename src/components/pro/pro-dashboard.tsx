@@ -11,13 +11,15 @@ import { toast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { formatFCFA } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
-import { PRO_SPECIALTIES } from "@/lib/constants";
+import { useGeolocation } from "@/hooks/use-geolocation";
 import {
   publishRealtimeEvent,
   useInterventionRealtime,
 } from "@/hooks/use-intervention-realtime";
 import type { RealtimeEvent } from "@/lib/realtime/realtime-service";
 import { Input } from "@/components/ui/input";
+
+type Trade = { id: string; name: string; slug: string };
 
 type Mission = {
   id: string;
@@ -51,7 +53,8 @@ const STATUS_LABEL: Record<string, string> = {
 export function ProDashboard() {
   const user = useAuthStore((s) => s.user);
   const [available, setAvailable] = useState(false);
-  const [specialty, setSpecialty] = useState<string>(PRO_SPECIALTIES.MECHANIC);
+  const [specialty, setSpecialty] = useState<string>("");
+  const [trades, setTrades] = useState<Trade[]>([]);
   const [missions, setMissions] = useState<Mission[]>([]);
   const [active, setActive] = useState<Mission | null>(null);
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -59,6 +62,19 @@ export function ProDashboard() {
   const [busy, setBusy] = useState(false);
   const [chat, setChat] = useState<{ senderId: string; content: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const geo = useGeolocation();
+
+  useEffect(() => {
+    void (async () => {
+      const res = await apiFetch<{ trades: Trade[] }>("/api/trades");
+      if (res.ok) {
+        setTrades(res.data.trades);
+        if (!specialty && res.data.trades.length > 0) {
+          setSpecialty(res.data.trades[0].slug);
+        }
+      }
+    })();
+  }, []);
 
   const loadMissions = useCallback(async () => {
     const res = await apiFetch<{
@@ -129,11 +145,9 @@ export function ProDashboard() {
   }, [loadMissions, loadWallet, realtimeConnected]);
 
   useEffect(() => {
-    if (!active || !navigator.geolocation) return;
+    if (!active) return;
     let lastSent = 0;
-    const id = navigator.geolocation.watchPosition(async (pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
+    geo.watch(async (lat, lng) => {
       setCoords({ lat, lng });
       const now = Date.now();
       if (now - lastSent < 4000) return;
@@ -149,7 +163,7 @@ export function ProDashboard() {
         lng,
       });
     });
-    return () => navigator.geolocation.clearWatch(id);
+    return () => geo.stopWatch();
   }, [active]);
 
   const locateAndToggle = async (next: boolean) => {
@@ -157,6 +171,7 @@ export function ProDashboard() {
     let lat = coords?.lat;
     let lng = coords?.lng;
     if (next && (lat === undefined || lng === undefined)) {
+      geo.locate();
       const pos = await new Promise<GeolocationPosition | null>((resolve) => {
         if (!navigator.geolocation) return resolve(null);
         navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), {
@@ -251,16 +266,18 @@ export function ProDashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="specialty">Spécialité</Label>
+              <Label htmlFor="specialty">Métier</Label>
               <select
                 id="specialty"
                 className="w-full h-12 rounded-input border border-border bg-bg-surface px-3"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
               >
-                <option value={PRO_SPECIALTIES.MECHANIC}>Mécanicien</option>
-                <option value={PRO_SPECIALTIES.TIRE}>Vulcanisateur</option>
-                <option value={PRO_SPECIALTIES.ELECTRICIAN}>Électricien auto</option>
+                {trades.map((t) => (
+                  <option key={t.id} value={t.slug}>
+                    {t.name}
+                  </option>
+                ))}
               </select>
             </div>
             <Button
@@ -328,9 +345,9 @@ export function ProDashboard() {
                 {active.status === "in_progress" && (
                   <Button
                     variant="urgent"
-                    onClick={() => advance("completed", active.estimatedPrice ?? 10000)}
+                    onClick={() => advance("completed", active.estimatedPrice)}
                   >
-                    Terminer ({formatFCFA(active.estimatedPrice ?? 10000)})
+                    Terminer{active.estimatedPrice ? ` (${formatFCFA(active.estimatedPrice)})` : ""}
                   </Button>
                 )}
               </div>

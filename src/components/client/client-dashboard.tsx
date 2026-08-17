@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MapPin, ShoppingBag, Wrench } from "lucide-react";
+import { ShoppingBag, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ClientLiveMap } from "@/components/maps/client-live-map";
+import { LocationLoader } from "@/components/maps/location-loader";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { toast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
@@ -45,7 +46,6 @@ export function ClientDashboard() {
   const user = useAuthStore((s) => s.user);
   const [problem, setProblem] = useState("");
   const [loading, setLoading] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [active, setActive] = useState<Intervention[]>([]);
   const [history, setHistory] = useState<Intervention[]>([]);
@@ -140,26 +140,6 @@ export function ClientDashboard() {
     };
   }, [load, realtimeConnected]);
 
-  const locate = () => {
-    if (!navigator.geolocation) {
-      toast.error("Géolocalisation non supportée");
-      return;
-    }
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGeoLoading(false);
-        toast.success("Position détectée");
-      },
-      () => {
-        setGeoLoading(false);
-        toast.error("Impossible d'obtenir la position");
-      },
-      { enableHighAccuracy: true, timeout: 12000 }
-    );
-  };
-
   const createIntervention = async () => {
     if (!coords) {
       toast.error("Activez d'abord votre position");
@@ -176,7 +156,6 @@ export function ClientDashboard() {
         problem,
         lat: coords.lat,
         lng: coords.lng,
-        estimatedPrice: 10000,
       }),
     });
     setLoading(false);
@@ -299,10 +278,10 @@ export function ClientDashboard() {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={locate} loading={geoLoading}>
-                <MapPin className="h-4 w-4" />
-                {coords ? "Position OK" : "Ma position"}
-              </Button>
+              <LocationLoader
+                onLocated={(lat, lng) => setCoords({ lat, lng })}
+                currentCoords={coords}
+              />
               <Button
                 type="button"
                 variant="urgent"
