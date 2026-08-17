@@ -6,6 +6,7 @@ const NAV = [
   { href: LANDING_ROUTES.adminApp, label: "Tableau de bord", exact: true },
   { href: "/admin/trades", label: "Métiers", exact: true },
   { href: "/admin/pricing", label: "Tarification", exact: true },
+  { href: "/admin/shop", label: "Boutique", exact: true },
 ];
 
 export default function AdminGroupLayout({

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import { toast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 
@@ -141,14 +142,11 @@ export default function AdminTradesPage() {
               />
             </div>
           </div>
-          <div className="space-y-1">
-            <Label>URL image (optionnel)</Label>
-            <Input
-              placeholder="https://..."
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-            />
-          </div>
+          <ImageUploader
+            bucket="trades"
+            currentUrl={imageUrl}
+            onUploaded={(url) => setImageUrl(url)}
+          />
           <div className="flex gap-2">
             <Button onClick={save}>{editing ? "Modifier" : "Ajouter"}</Button>
             {editing && (
