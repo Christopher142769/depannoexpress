@@ -5,10 +5,13 @@ import { requireRole, requireSession } from "@/server/auth/guards";
 import { fromZodError, handleRouteError, jsonError, jsonOk } from "@/server/api/http";
 import { USER_ROLES } from "@/lib/constants";
 
+const CURRENCIES = ["XOF", "XAF", "NGN", "EUR", "USD"] as const;
+
 const upsertSchema = z.object({
   tradeId: z.string().uuid(),
   basePrice: z.number().min(1).max(5_000_000),
   pricePerKm: z.number().min(0).max(100_000).optional(),
+  currency: z.enum(CURRENCIES).optional(),
 });
 
 export async function GET(req: Request) {
@@ -18,12 +21,20 @@ export async function GET(req: Request) {
     const forbidden = requireRole(auth.user, [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]);
     if (forbidden) return forbidden;
 
+    const { searchParams } = new URL(req.url);
+    const includeInactive = searchParams.get("all") === "1";
+
     const supabase = getSupabaseAdmin();
-    const { data: rules, error } = await supabase
+    let query = supabase
       .from("pricing_rules")
       .select("*, trade:trades(id, name, slug)")
       .order("created_at", { ascending: true });
 
+    if (!includeInactive) {
+      query = query.eq("is_active", true);
+    }
+
+    const { data: rules, error } = await query;
     if (error) throw new Error(error.message);
 
     return jsonOk({ rules: rules ?? [] });
@@ -57,6 +68,7 @@ export async function POST(req: Request) {
         .update({
           base_price: body.basePrice,
           price_per_km: body.pricePerKm ?? 0,
+          currency: body.currency ?? "XOF",
           updated_by: auth.user.id,
         })
         .eq("id", existing.id)
@@ -72,6 +84,7 @@ export async function POST(req: Request) {
           trade_id: body.tradeId,
           base_price: body.basePrice,
           price_per_km: body.pricePerKm ?? 0,
+          currency: body.currency ?? "XOF",
           updated_by: auth.user.id,
         })
         .select("*, trade:trades(id, name, slug)")
@@ -100,7 +113,10 @@ export async function DELETE(req: Request) {
     if (!id) return jsonError(400, "id requis");
 
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("pricing_rules").delete().eq("id", id);
+    const { error } = await supabase
+      .from("pricing_rules")
+      .update({ is_active: false })
+      .eq("id", id);
     if (error) throw new Error(error.message);
 
     return jsonOk({ ok: true });

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Pencil, ToggleLeft, ToggleRight, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 
@@ -14,18 +15,22 @@ type Trade = {
   name: string;
   slug: string;
   icon: string | null;
+  image_url: string | null;
   is_active: boolean;
   created_at: string;
 };
 
 export default function AdminTradesPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [showInactive, setShowInactive] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [editing, setEditing] = useState<Trade | null>(null);
 
   const load = async () => {
-    const res = await apiFetch<{ trades: Trade[] }>("/api/admin/trades");
+    const params = showInactive ? "?all=1" : "";
+    const res = await apiFetch<{ trades: Trade[] }>(`/api/admin/trades${params}`);
     if (!res.ok) {
       toast.error(res.error);
       return;
@@ -35,23 +40,28 @@ export default function AdminTradesPage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [showInactive]);
 
   const reset = () => {
     setName("");
     setSlug("");
+    setImageUrl("");
     setEditing(null);
   };
 
   const save = async () => {
-    if (!name.trim() || !slug.trim()) {
-      toast.error("Nom et slug requis");
+    if (!name.trim()) {
+      toast.error("Nom requis");
       return;
     }
     if (editing) {
+      const body: Record<string, unknown> = { id: editing.id };
+      if (name !== editing.name) body.name = name;
+      if (slug !== editing.slug) body.slug = slug;
+      if (imageUrl !== (editing.image_url ?? "")) body.imageUrl = imageUrl || null;
       const res = await apiFetch("/api/admin/trades", {
         method: "PATCH",
-        body: JSON.stringify({ id: editing.id, name, slug }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         toast.error(res.error);
@@ -61,7 +71,7 @@ export default function AdminTradesPage() {
     } else {
       const res = await apiFetch("/api/admin/trades", {
         method: "POST",
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify({ name, slug: slug || undefined, imageUrl: imageUrl || undefined }),
       });
       if (!res.ok) {
         toast.error(res.error);
@@ -85,15 +95,14 @@ export default function AdminTradesPage() {
     await load();
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("Supprimer ce métier ?")) return;
-    const res = await apiFetch(`/api/admin/trades?id=${id}`, { method: "DELETE" });
+  const deactivate = async (trade: Trade) => {
+    if (!confirm(`Désactiver le métier « ${trade.name} » ?`)) return;
+    const res = await apiFetch(`/api/admin/trades?id=${trade.id}`, { method: "DELETE" });
     if (!res.ok) {
       toast.error(res.error);
       return;
     }
-    toast.success("Supprimé");
-    reset();
+    toast.success("Métier désactivé");
     await load();
   };
 
@@ -112,18 +121,32 @@ export default function AdminTradesPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 space-y-1">
+              <Label>Nom</Label>
+              <Input
+                placeholder="Ex. Mécanicien"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (!editing) setSlug(slugify(e.target.value));
+                }}
+              />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label>Slug</Label>
+              <Input
+                placeholder="mecanicien"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label>URL image (optionnel)</Label>
             <Input
-              placeholder="Nom (ex. Mécanicien)"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (!editing) setSlug(e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""));
-              }}
-            />
-            <Input
-              placeholder="Slug (ex. mecanicien)"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
+              placeholder="https://..."
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
@@ -138,8 +161,17 @@ export default function AdminTradesPage() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle>Liste des métiers</CardTitle>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+              className="rounded"
+            />
+            Inactifs
+          </label>
         </CardHeader>
         <CardContent className="space-y-2">
           {trades.length === 0 && (
@@ -151,6 +183,12 @@ export default function AdminTradesPage() {
               className="flex items-center justify-between rounded-input border border-border px-4 py-3"
             >
               <div className="flex items-center gap-3">
+                {t.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.image_url} alt={t.name} className="h-6 w-6 rounded object-cover" />
+                ) : (
+                  <ImageIcon className="h-5 w-5 text-text-secondary" />
+                )}
                 <span className="font-medium">{t.name}</span>
                 <span className="text-xs text-text-secondary">{t.slug}</span>
                 <Badge variant={t.is_active ? "success" : "outline"}>
@@ -170,13 +208,14 @@ export default function AdminTradesPage() {
                     setEditing(t);
                     setName(t.name);
                     setSlug(t.slug);
+                    setImageUrl(t.image_url ?? "");
                   }}
                   className="p-1 hover:opacity-70"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
-                <button onClick={() => remove(t.id)} className="p-1 hover:opacity-70">
-                  <Trash2 className="h-4 w-4 text-brand-red" />
+                <button onClick={() => deactivate(t)} className="p-1 hover:opacity-70 text-brand-red text-xs">
+                  Désactiver
                 </button>
               </div>
             </div>
@@ -185,4 +224,13 @@ export default function AdminTradesPage() {
       </Card>
     </div>
   );
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }

@@ -6,7 +6,7 @@ export async function GET() {
     const supabase = getSupabaseAdmin();
     const { data: trades, error } = await supabase
       .from("trades")
-      .select("id, name, slug, icon")
+      .select("id, name, slug, icon, image_url")
       .eq("is_active", true)
       .order("created_at", { ascending: true });
 
