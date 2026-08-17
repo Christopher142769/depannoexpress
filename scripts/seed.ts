@@ -1,6 +1,6 @@
 /**
  * Seed de démonstration — npm run seed
- * Prérequis : MONGODB_URI dans .env.local
+ * Prérequis : SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY dans .env.local
  */
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
@@ -23,28 +23,24 @@ loadEnvFile(".env.local");
 loadEnvFile(".env");
 
 async function main() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI manquant");
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY manquants");
   }
 
-  const { connectDB } = await import("../src/server/db/mongodb");
-  const {
-    User,
-    Product,
-    Intervention,
-    INTERVENTION_STATUS,
-    Wallet,
-  } = await import("../src/server/db/models");
-  const { USER_ROLES, PRO_SPECIALTIES } = await import("../src/lib/constants");
-  const { BOUTIQUE_PRODUCTS } = await import("../src/lib/boutique-products");
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
   const { hashPassword } = await import("../src/server/auth/password");
   const { DEMO_PASSWORD } = await import("../src/lib/demo-accounts");
 
-  await connectDB();
-  console.log("→ Connexion Mongo OK");
+  console.log("→ Connexion Supabase OK");
 
   const passwordHash = await hashPassword(DEMO_PASSWORD);
 
+  // Upsert helper
   async function upsertUser(data: {
     email: string;
     name: string;
@@ -54,44 +50,40 @@ async function main() {
     isAvailable?: boolean;
     coordinates?: [number, number];
   }) {
-    const update: Record<string, unknown> = {
+    const row: Record<string, unknown> = {
+      email: data.email,
       name: data.name,
       phone: data.phone,
       role: data.role,
-      isVerified: true,
-      passwordHash,
-      specialty: data.specialty,
-      isAvailable: data.isAvailable ?? false,
+      is_verified: true,
+      password_hash: passwordHash,
+      specialty: data.specialty ?? null,
+      is_available: data.isAvailable ?? false,
     };
-    const unset: Record<string, 1> = {};
     if (data.coordinates) {
-      update.location = { type: "Point", coordinates: data.coordinates };
-    } else {
-      unset.location = 1;
+      row.location = `POINT(${data.coordinates[0]} ${data.coordinates[1]})`;
     }
-    return User.findOneAndUpdate(
-      { email: data.email },
-      {
-        $set: update,
-        ...(Object.keys(unset).length ? { $unset: unset } : {}),
-      },
-      { upsert: true, returnDocument: "after" }
-    );
+    const { data: result } = await supabase
+      .from("users")
+      .upsert(row, { onConflict: "email" })
+      .select("id, email")
+      .single();
+    return result;
   }
 
   const client = await upsertUser({
     email: "client.demo@depannage-express.bj",
     name: "Aïcha Demo",
     phone: "+22997001111",
-    role: USER_ROLES.CLIENT,
+    role: "client",
   });
 
   const pro = await upsertUser({
     email: "pro.demo@depannage-express.bj",
     name: "Koffi Mécano",
     phone: "+22997002222",
-    role: USER_ROLES.PRO,
-    specialty: PRO_SPECIALTIES.MECHANIC,
+    role: "pro",
+    specialty: "mecanicien",
     isAvailable: true,
     coordinates: [2.3912, 6.3703],
   });
@@ -100,69 +92,72 @@ async function main() {
     email: "admin.demo@depannage-express.bj",
     name: "Admin Demo",
     phone: "+22997003333",
-    role: USER_ROLES.ADMIN,
+    role: "admin",
   });
 
-  await Wallet.findOneAndUpdate(
-    { userId: pro!._id },
-    { $setOnInsert: { balance: 25000 } },
-    { upsert: true, new: true }
-  );
+  // Wallet for pro
+  await supabase
+    .from("wallets")
+    .upsert({ user_id: pro!.id, balance: 25000 }, { onConflict: "user_id" });
 
-  const products = BOUTIQUE_PRODUCTS.map((p) => ({
-    name: p.name,
-    description: p.description,
-    category: p.category,
-    price: p.price,
-    stock: p.stock,
-    imageUrl: p.imageUrl,
-  }));
-
-  for (const p of products) {
-    await Product.findOneAndUpdate(
-      { name: p.name, vendorId: pro!._id },
-      { $set: { ...p, vendorId: pro!._id, isActive: true } },
-      { upsert: true, new: true }
+  // Products
+  const { BOUTIQUE_PRODUCTS } = await import("../src/lib/boutique-products");
+  for (const p of BOUTIQUE_PRODUCTS) {
+    await supabase.from("products").upsert(
+      {
+        vendor_id: pro!.id,
+        name: p.name,
+        description: p.description,
+        category: p.category,
+        price: p.price,
+        stock: p.stock,
+        image_url: p.imageUrl,
+        is_active: true,
+      },
+      { onConflict: "name,vendor_id" }
     );
   }
 
-  const existing = await Intervention.findOne({
-    clientId: client!._id,
-    problem: "Batterie à plat, seed demo",
-  });
-  if (!existing) {
-    await Intervention.create({
-      clientId: client!._id,
-      proId: pro!._id,
-      status: INTERVENTION_STATUS.COMPLETED,
+  // Interventions
+  const { data: existingCompleted } = await supabase
+    .from("interventions")
+    .select("id")
+    .eq("client_id", client!.id)
+    .eq("problem", "Batterie à plat, seed demo")
+    .limit(1)
+    .single();
+
+  if (!existingCompleted) {
+    await supabase.from("interventions").insert({
+      client_id: client!.id,
+      pro_id: pro!.id,
+      status: "completed",
       problem: "Batterie à plat, seed demo",
-      clientLocation: {
-        type: "Point",
-        coordinates: [2.392, 6.371],
-        address: "Cotonou, Akpakpa",
-      },
-      estimatedPrice: 10000,
-      finalPrice: 10000,
-      completedAt: new Date(),
+      client_location: `POINT(2.392 6.371)`,
+      client_address: "Cotonou, Akpakpa",
+      estimated_price: 10000,
+      final_price: 10000,
+      completed_at: new Date().toISOString(),
     });
   }
 
-  const pending = await Intervention.findOne({
-    clientId: client!._id,
-    problem: "Pneu crevé — démo en attente",
-    status: INTERVENTION_STATUS.PENDING,
-  });
-  if (!pending) {
-    await Intervention.create({
-      clientId: client!._id,
-      status: INTERVENTION_STATUS.PENDING,
+  const { data: existingPending } = await supabase
+    .from("interventions")
+    .select("id")
+    .eq("client_id", client!.id)
+    .eq("problem", "Pneu crevé — démo en attente")
+    .eq("status", "pending")
+    .limit(1)
+    .single();
+
+  if (!existingPending) {
+    await supabase.from("interventions").insert({
+      client_id: client!.id,
+      status: "pending",
       problem: "Pneu crevé — démo en attente",
-      clientLocation: {
-        type: "Point",
-        coordinates: [2.3885, 6.365],
-        address: "Cotonou, Fidjrossè",
-      },
-      estimatedPrice: 8000,
+      client_location: `POINT(2.3885 6.365)`,
+      client_address: "Cotonou, Fidjrossè",
+      estimated_price: 8000,
     });
   }
 
@@ -172,8 +167,6 @@ async function main() {
   console.log("  · Utilisateur :", client!.email, "→ /login → /app");
   console.log("  · Dépanneur  :", pro!.email, "→ /pro/login → /pro");
   console.log("  · Admin      :", admin!.email, "→ /admin/login → /admin");
-  console.log("");
-  console.log("  Hub démo : http://localhost:3000/demo");
   process.exit(0);
 }
 

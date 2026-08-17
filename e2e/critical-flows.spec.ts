@@ -113,12 +113,14 @@ test.describe("Parcours critiques", () => {
     }
 
     try {
-      const { connectDB } = await import("../src/server/db/mongodb");
-      const { User } = await import("../src/server/db/models");
-      await connectDB();
-      await User.findOneAndUpdate({ email: email.toLowerCase() }, { role: "admin" });
+      const { createClient } = await import("@supabase/supabase-js");
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !key) throw new Error("Supabase not configured");
+      const supabase = createClient(url, key);
+      await supabase.from("users").update({ role: "admin" }).eq("email", email.toLowerCase());
     } catch {
-      test.skip(true, "MongoDB indisponible");
+      test.skip(true, "Supabase indisponible");
     }
 
     await page.request.post("/api/auth/logout");

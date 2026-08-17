@@ -10,8 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "seed": "tsx scripts/seed.ts",
-    "mongo": "docker compose up -d"
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -30,7 +29,6 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.21.0",
     "mapbox-gl": "^3.25.0",
-    "mongoose": "^9.7.2",
     "next": "16.2.9",
     "nodemailer": "^9.0.1",
     "react": "19.2.4",

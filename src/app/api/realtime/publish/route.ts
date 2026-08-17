@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { ZodError } from "zod";
-import { connectDB } from "@/server/db/mongodb";
 import { requireSession } from "@/server/auth/guards";
 import { assertInterventionParty } from "@/server/auth/intervention-access";
 import { fromZodError, handleRouteError, jsonError, jsonOk } from "@/server/api/http";
@@ -34,7 +33,6 @@ export async function POST(req: Request) {
     if ("error" in auth) return auth.error;
 
     const body = schema.parse(await req.json());
-    await connectDB();
 
     const access = await assertInterventionParty(auth.user, body.interventionId);
     if (!access.ok) return jsonError(access.status, access.error);
@@ -66,7 +64,6 @@ export async function POST(req: Request) {
 
     const result = await broadcastInterventionEvent(body.interventionId, event);
     if (!result.ok) {
-      // Soft-fail : l’API métier reste utilisable même sans Supabase configuré
       return jsonOk({ ok: false, queued: false, reason: result.reason, event });
     }
 

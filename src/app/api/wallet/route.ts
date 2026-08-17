@@ -1,5 +1,4 @@
-import { connectDB } from "@/server/db/mongodb";
-import { WalletTransaction } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { handleRouteError, jsonOk } from "@/server/api/http";
 import { getOrCreateWallet } from "@/server/services/wallet-service";
@@ -16,23 +15,26 @@ export async function GET(req: Request) {
     ]);
     if (forbidden) return forbidden;
 
-    await connectDB();
     const wallet = await getOrCreateWallet(auth.user.id);
-    const transactions = await WalletTransaction.find({ userId: auth.user.id })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
+
+    const supabase = getSupabaseAdmin();
+    const { data: transactions } = await supabase
+      .from("wallet_transactions")
+      .select("id, type, amount, balance_after, description, intervention_id, created_at")
+      .eq("user_id", auth.user.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
 
     return jsonOk({
-      balance: wallet.balance,
-      transactions: transactions.map((t) => ({
-        id: t._id.toString(),
+      balance: wallet?.balance ?? 0,
+      transactions: (transactions ?? []).map((t) => ({
+        id: t.id,
         type: t.type,
         amount: t.amount,
-        balanceAfter: t.balanceAfter,
+        balanceAfter: t.balance_after,
         description: t.description,
-        interventionId: t.interventionId?.toString(),
-        createdAt: t.createdAt,
+        interventionId: t.intervention_id,
+        createdAt: t.created_at,
       })),
     });
   } catch (err) {

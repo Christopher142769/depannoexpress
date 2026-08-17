@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
-import { connectDB } from "@/server/db/mongodb";
-import { OTP, User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import type { DbUser } from "@/server/db/types";
 import { requestOtpSchema } from "@/server/auth/schemas";
 import { generateOtpCode, normalizeEmail } from "@/server/auth/otp";
 import { pruneRateLimits, takeRateLimit } from "@/server/auth/rate-limit";
@@ -47,8 +47,13 @@ export async function POST(req: Request) {
       );
     }
 
-    await connectDB();
-    const existing = await User.findOne({ email });
+    const supabase = getSupabaseAdmin();
+
+    const { data: existing } = await supabase
+      .from("users")
+      .select("id, role")
+      .eq("email", email)
+      .single();
 
     if (body.mode === "login") {
       if (!existing) {
@@ -72,23 +77,23 @@ export async function POST(req: Request) {
         );
       }
     } else {
-      await User.create({
+      await supabase.from("users").insert({
         email,
         name: sanitizeText(body.name, 120),
         phone: sanitizeOptional(body.phone, 20),
         role: body.role,
-        isVerified: false,
+        is_verified: false,
       });
     }
 
-    await OTP.deleteMany({ email });
+    // Delete old OTPs for this email
+    await supabase.from("otps").delete().eq("email", email);
 
-    // Le code ne doit JAMAIS apparaître dans la réponse HTTP (même en dev).
     const code = generateOtpCode();
-    await OTP.create({
+    await supabase.from("otps").insert({
       email,
       code,
-      expiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
+      expires_at: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString(),
       attempts: 0,
     });
 

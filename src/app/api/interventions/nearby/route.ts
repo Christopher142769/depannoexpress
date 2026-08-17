@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { ZodError } from "zod";
-import { connectDB } from "@/server/db/mongodb";
-import { User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { fromZodError, handleRouteError, jsonOk } from "@/server/api/http";
 import { NEARBY_RADIUS_KM, USER_ROLES } from "@/lib/constants";
@@ -28,35 +27,25 @@ export async function GET(req: Request) {
       radiusKm: searchParams.get("radiusKm") ?? undefined,
     });
 
-    await connectDB();
+    const supabase = getSupabaseAdmin();
     const radiusMeters = (q.radiusKm ?? NEARBY_RADIUS_KM) * 1000;
 
-    const filter: Record<string, unknown> = {
-      role: USER_ROLES.PRO,
-      isAvailable: true,
-      location: {
-        $near: {
-          $geometry: { type: "Point", coordinates: [q.lng, q.lat] },
-          $maxDistance: radiusMeters,
-        },
-      },
-    };
-    if (q.specialty) filter.specialty = q.specialty;
-
-    const pros = await User.find(filter)
-      .select("name phone specialty location isAvailable")
-      .limit(20)
-      .lean();
+    const { data: pros } = await supabase.rpc("find_nearby_pros", {
+      lng: q.lng,
+      lat: q.lat,
+      radius_meters: radiusMeters,
+      spec: q.specialty ?? null,
+    });
 
     return jsonOk({
-      pros: pros.map((p) => ({
-        id: p._id.toString(),
+      pros: (pros ?? []).map((p: Record<string, unknown>) => ({
+        id: p.id,
         name: p.name,
         phone: p.phone,
         specialty: p.specialty,
-        isAvailable: p.isAvailable,
-        location: p.location?.coordinates
-          ? { lng: p.location.coordinates[0], lat: p.location.coordinates[1] }
+        isAvailable: p.is_available,
+        location: p.lng_out && p.lat_out
+          ? { lng: p.lng_out, lat: p.lat_out }
           : null,
       })),
     });

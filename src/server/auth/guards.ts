@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { connectDB } from "@/server/db/mongodb";
-import { User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import type { DbUser } from "@/server/db/types";
 import {
   getSessionTokenFromRequest,
   verifySessionToken,
@@ -18,26 +18,24 @@ export type AuthUser = {
 };
 
 export function toAuthUser(user: {
-  _id: { toString(): string };
+  id: string;
   email: string;
   name: string;
   role: UserRole;
-  phone?: string;
+  phone?: string | null;
 }): AuthUser {
   return {
-    id: user._id.toString(),
+    id: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
-    phone: user.phone,
+    phone: user.phone ?? undefined,
   };
 }
 
 export async function requireSession(
   req?: NextRequest | Request
 ): Promise<{ session: SessionPayload; user: AuthUser } | { error: Response }> {
-  await connectDB();
-
   let session: SessionPayload | null = null;
   if (req) {
     const token = getSessionTokenFromRequest(req);
@@ -51,14 +49,20 @@ export async function requireSession(
     return { error: jsonError(401, "Non authentifié", undefined, "UNAUTHORIZED") };
   }
 
-  const user = await User.findById(session.sub).lean();
-  if (!user) {
+  const supabase = getSupabaseAdmin();
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("id, email, name, role, phone")
+    .eq("id", session.sub)
+    .single();
+
+  if (error || !user) {
     return { error: jsonError(401, "Session invalide", undefined, "INVALID_SESSION") };
   }
 
   return {
     session,
-    user: toAuthUser(user),
+    user: toAuthUser(user as DbUser),
   };
 }
 

@@ -1,5 +1,4 @@
-import { connectDB } from "@/server/db/mongodb";
-import { Intervention } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { handleRouteError, jsonOk } from "@/server/api/http";
 import { serializeIntervention } from "@/server/api/serialize";
@@ -18,19 +17,21 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
 
-    await connectDB();
-    const filter: Record<string, unknown> = {};
-    if (status) filter.status = status;
+    const supabase = getSupabaseAdmin();
+    let query = supabase
+      .from("interventions")
+      .select("*, client:users!interventions_client_id_fkey(id, name, phone), pro:users!interventions_pro_id_fkey(id, name, phone, specialty)")
+      .order("created_at", { ascending: false })
+      .limit(100);
 
-    const interventions = await Intervention.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .populate("clientId", "name phone")
-      .populate("proId", "name phone specialty")
-      .lean();
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: interventions } = await query;
 
     return jsonOk({
-      interventions: interventions.map((i) => serializeIntervention(i)),
+      interventions: (interventions ?? []).map((i) => serializeIntervention(i)),
     });
   } catch (err) {
     return handleRouteError(err);

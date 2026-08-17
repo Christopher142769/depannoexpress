@@ -1,5 +1,5 @@
-import { connectDB } from "@/server/db/mongodb";
-import { Intervention, INTERVENTION_STATUS, User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import { INTERVENTION_STATUS } from "@/server/db/types";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { handleRouteError, jsonError, jsonOk } from "@/server/api/http";
 import { serializeIntervention } from "@/server/api/serialize";
@@ -16,52 +16,55 @@ export async function POST(req: Request, ctx: Ctx) {
     if (forbidden) return forbidden;
 
     const { id } = await ctx.params;
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const busy = await Intervention.findOne({
-      proId: auth.user.id,
-      status: {
-        $in: [
-          INTERVENTION_STATUS.ACCEPTED,
-          INTERVENTION_STATUS.EN_ROUTE,
-          INTERVENTION_STATUS.IN_PROGRESS,
-        ],
-      },
-    });
+    // Check if pro already has an active mission
+    const { data: busy } = await supabase
+      .from("interventions")
+      .select("id")
+      .eq("pro_id", auth.user.id)
+      .in("status", [
+        INTERVENTION_STATUS.ACCEPTED,
+        INTERVENTION_STATUS.EN_ROUTE,
+        INTERVENTION_STATUS.IN_PROGRESS,
+      ])
+      .limit(1)
+      .single();
+
     if (busy) {
       return jsonError(409, "Vous avez déjà une mission active");
     }
 
-    const doc = await Intervention.findOneAndUpdate(
-      {
-        _id: id,
-        status: INTERVENTION_STATUS.PENDING,
-        $or: [{ proId: null }, { proId: { $exists: false } }],
-      },
-      {
-        $set: {
-          status: INTERVENTION_STATUS.ACCEPTED,
-          proId: auth.user.id,
-        },
-      },
-      { new: true }
-    )
-      .populate("clientId", "name phone")
-      .populate("proId", "name phone specialty");
+    // Atomic accept: only accept if pending and not yet assigned
+    const { data: doc, error: updateError } = await supabase
+      .from("interventions")
+      .update({
+        status: INTERVENTION_STATUS.ACCEPTED,
+        pro_id: auth.user.id,
+      })
+      .eq("id", id)
+      .eq("status", INTERVENTION_STATUS.PENDING)
+      .is("pro_id", null)
+      .select("*, client:users!interventions_client_id_fkey(id, name, phone), pro:users!interventions_pro_id_fkey(id, name, phone, specialty)")
+      .single();
 
-    if (!doc) {
+    if (updateError || !doc) {
       return jsonError(409, "Mission déjà prise ou introuvable");
     }
 
-    await User.findByIdAndUpdate(auth.user.id, { isAvailable: false });
+    // Set pro as unavailable
+    await supabase
+      .from("users")
+      .update({ is_available: false })
+      .eq("id", auth.user.id);
 
-    void broadcastInterventionEvent(doc._id.toString(), {
+    void broadcastInterventionEvent(doc.id, {
       type: "status_change",
-      interventionId: doc._id.toString(),
+      interventionId: doc.id,
       status: INTERVENTION_STATUS.ACCEPTED,
     });
 
-    return jsonOk({ intervention: serializeIntervention(doc.toObject()) });
+    return jsonOk({ intervention: serializeIntervention(doc) });
   } catch (err) {
     return handleRouteError(err);
   }

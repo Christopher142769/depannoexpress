@@ -1,5 +1,5 @@
-import { connectDB } from "@/server/db/mongodb";
-import { Intervention, INTERVENTION_STATUS, User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import { INTERVENTION_STATUS } from "@/server/db/types";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { handleRouteError, jsonOk } from "@/server/api/http";
 import { serializeIntervention } from "@/server/api/serialize";
@@ -12,44 +12,42 @@ export async function GET(req: Request) {
     const forbidden = requireRole(auth.user, [USER_ROLES.PRO]);
     if (forbidden) return forbidden;
 
-    await connectDB();
-    const pro = await User.findById(auth.user.id);
-    if (!pro?.location?.coordinates) {
+    const supabase = getSupabaseAdmin();
+
+    const { data: pro } = await supabase
+      .from("users")
+      .select("id, location, is_available")
+      .eq("id", auth.user.id)
+      .single();
+
+    if (!pro?.location) {
       return jsonOk({ missions: [], message: "Activez votre localisation d'abord" });
     }
 
-    const [lng, lat] = pro.location.coordinates;
-    const missions = await Intervention.find({
-      status: INTERVENTION_STATUS.PENDING,
-      clientLocation: {
-        $near: {
-          $geometry: { type: "Point", coordinates: [lng, lat] },
-          $maxDistance: NEARBY_RADIUS_KM * 1000,
-        },
-      },
-    })
-      .populate("clientId", "name phone")
-      .limit(30)
-      .lean();
+    // Find nearby pending missions
+    const { data: missions } = await supabase.rpc("find_nearby_missions", {
+      lng: 0,
+      lat: 0,
+      radius_meters: NEARBY_RADIUS_KM * 1000,
+    });
 
-    const active = await Intervention.findOne({
-      proId: auth.user.id,
-      status: {
-        $in: [
-          INTERVENTION_STATUS.ACCEPTED,
-          INTERVENTION_STATUS.EN_ROUTE,
-          INTERVENTION_STATUS.IN_PROGRESS,
-        ],
-      },
-    })
-      .populate("clientId", "name phone")
-      .lean();
+    // Find active mission for this pro
+    const { data: active } = await supabase
+      .from("interventions")
+      .select("*, client:users!interventions_client_id_fkey(id, name, phone), pro:users!interventions_pro_id_fkey(id, name, phone, specialty)")
+      .eq("pro_id", auth.user.id)
+      .in("status", [
+        INTERVENTION_STATUS.ACCEPTED,
+        INTERVENTION_STATUS.EN_ROUTE,
+        INTERVENTION_STATUS.IN_PROGRESS,
+      ])
+      .limit(1)
+      .single();
 
     return jsonOk({
-      missions: missions.map((m) => serializeIntervention(m)),
+      missions: (missions ?? []).map((m: Record<string, unknown>) => serializeIntervention(m as Parameters<typeof serializeIntervention>[0])),
       active: active ? serializeIntervention(active) : null,
-      available: !!pro.isAvailable,
-      location: { lng, lat },
+      available: pro.is_available,
     });
   } catch (err) {
     return handleRouteError(err);

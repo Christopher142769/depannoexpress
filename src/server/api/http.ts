@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-/** Forme d’erreur API uniforme sur toute la plateforme */
 export type ApiErrorBody = {
   error: string;
   code?: string;
@@ -33,10 +32,9 @@ export function handleRouteError(err: unknown) {
 
   if (err instanceof Error) {
     if (
-      err.message.includes("MONGODB_URI") ||
-      err.message.includes("Mongo") ||
-      err.name === "MongoServerError" ||
-      err.name === "MongooseError"
+      err.message.includes("Supabase") ||
+      err.message.includes("JWT") ||
+      err.name === "PostgrestError"
     ) {
       console.error("[api:db]", err.message);
       return jsonError(503, "Service de données indisponible", undefined, "DB_UNAVAILABLE");
@@ -51,7 +49,6 @@ export function handleRouteError(err: unknown) {
   return jsonError(500, message, undefined, "INTERNAL_ERROR");
 }
 
-/** Enveloppe une route API : catch systématique + réponses homogènes */
 export function apiHandler(
   handler: (req: Request, ctx?: unknown) => Promise<Response>
 ) {

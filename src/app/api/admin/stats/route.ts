@@ -1,11 +1,5 @@
-import { connectDB } from "@/server/db/mongodb";
-import {
-  Intervention,
-  INTERVENTION_STATUS,
-  User,
-  WalletTransaction,
-  WALLET_TX_TYPE,
-} from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import { INTERVENTION_STATUS, WALLET_TX_TYPE } from "@/server/db/types";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { handleRouteError, jsonOk } from "@/server/api/http";
 import { USER_ROLES } from "@/lib/constants";
@@ -20,30 +14,32 @@ export async function GET(req: Request) {
     ]);
     if (forbidden) return forbidden;
 
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const [byStatus, prosActive, clients, revenue] = await Promise.all([
-      Intervention.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-      User.countDocuments({ role: USER_ROLES.PRO, isAvailable: true }),
-      User.countDocuments({ role: USER_ROLES.CLIENT }),
-      WalletTransaction.aggregate([
-        { $match: { type: WALLET_TX_TYPE.COMMISSION } },
-        { $group: { _id: null, total: { $sum: { $abs: "$amount" } } } },
-      ]),
+    // Parallel queries
+    const [interventionsResult, prosResult, clientsResult, revenueResult] = await Promise.all([
+      supabase.from("interventions").select("status"),
+      supabase.from("users").select("id", { count: "exact", head: true }).eq("role", USER_ROLES.PRO).eq("is_available", true),
+      supabase.from("users").select("id", { count: "exact", head: true }).eq("role", USER_ROLES.CLIENT),
+      supabase.from("wallet_transactions").select("amount").eq("type", WALLET_TX_TYPE.COMMISSION),
     ]);
 
-    const statusMap = Object.fromEntries(
-      Object.values(INTERVENTION_STATUS).map((s) => [s, 0])
-    );
-    for (const row of byStatus) {
-      statusMap[row._id] = row.count;
+    const statusMap: Record<string, number> = {};
+    for (const s of Object.values(INTERVENTION_STATUS)) {
+      statusMap[s] = 0;
     }
+    for (const row of interventionsResult.data ?? []) {
+      statusMap[row.status] = (statusMap[row.status] ?? 0) + 1;
+    }
+
+    const totalCommission = (revenueResult.data ?? [])
+      .reduce((sum, r) => sum + Math.abs(r.amount), 0);
 
     return jsonOk({
       interventionsByStatus: statusMap,
-      activePros: prosActive,
-      clients,
-      platformRevenue: revenue[0]?.total ?? 0,
+      activePros: prosResult.count ?? 0,
+      clients: clientsResult.count ?? 0,
+      platformRevenue: totalCommission,
       totalInterventions: Object.values(statusMap).reduce((a, b) => a + b, 0),
     });
   } catch (err) {

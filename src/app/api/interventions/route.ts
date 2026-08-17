@@ -1,12 +1,19 @@
 import { z } from "zod";
 import { ZodError } from "zod";
-import { connectDB } from "@/server/db/mongodb";
-import { Intervention, INTERVENTION_STATUS } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import { INTERVENTION_STATUS } from "@/server/db/types";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { fromZodError, handleRouteError, jsonError, jsonOk } from "@/server/api/http";
 import { serializeIntervention } from "@/server/api/serialize";
 import { sanitizeText } from "@/lib/sanitize";
 import { USER_ROLES } from "@/lib/constants";
+
+const ACTIVE_STATUSES = [
+  INTERVENTION_STATUS.PENDING,
+  INTERVENTION_STATUS.ACCEPTED,
+  INTERVENTION_STATUS.EN_ROUTE,
+  INTERVENTION_STATUS.IN_PROGRESS,
+];
 
 const createSchema = z.object({
   problem: z.string().min(5).max(1000),
@@ -23,29 +30,24 @@ export async function GET(req: Request) {
     const forbidden = requireRole(auth.user, [USER_ROLES.CLIENT]);
     if (forbidden) return forbidden;
 
-    await connectDB();
+    const supabase = getSupabaseAdmin();
     const { searchParams } = new URL(req.url);
     const activeOnly = searchParams.get("active") === "1";
 
-    const filter: Record<string, unknown> = { clientId: auth.user.id };
+    let query = supabase
+      .from("interventions")
+      .select("*, client:users!interventions_client_id_fkey(id, name, phone), pro:users!interventions_pro_id_fkey(id, name, phone, specialty)")
+      .eq("client_id", auth.user.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
     if (activeOnly) {
-      filter.status = {
-        $in: [
-          INTERVENTION_STATUS.PENDING,
-          INTERVENTION_STATUS.ACCEPTED,
-          INTERVENTION_STATUS.EN_ROUTE,
-          INTERVENTION_STATUS.IN_PROGRESS,
-        ],
-      };
+      query = query.in("status", ACTIVE_STATUSES);
     }
 
-    const items = await Intervention.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .populate("proId", "name phone specialty")
-      .lean();
+    const { data: items } = await query;
 
-    return jsonOk({ interventions: items.map((i) => serializeIntervention(i)) });
+    return jsonOk({ interventions: (items ?? []).map((i) => serializeIntervention(i)) });
   } catch (err) {
     return handleRouteError(err);
   }
@@ -59,36 +61,40 @@ export async function POST(req: Request) {
     if (forbidden) return forbidden;
 
     const body = createSchema.parse(await req.json());
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const active = await Intervention.findOne({
-      clientId: auth.user.id,
-      status: {
-        $in: [
-          INTERVENTION_STATUS.PENDING,
-          INTERVENTION_STATUS.ACCEPTED,
-          INTERVENTION_STATUS.EN_ROUTE,
-          INTERVENTION_STATUS.IN_PROGRESS,
-        ],
-      },
-    });
+    // Check for active intervention
+    const { data: active } = await supabase
+      .from("interventions")
+      .select("id")
+      .eq("client_id", auth.user.id)
+      .in("status", ACTIVE_STATUSES)
+      .limit(1)
+      .single();
+
     if (active) {
       return jsonError(409, "Vous avez déjà une intervention en cours");
     }
 
-    const created = await Intervention.create({
-      clientId: auth.user.id,
-      problem: sanitizeText(body.problem, 1000),
-      clientLocation: {
-        type: "Point",
-        coordinates: [body.lng, body.lat],
-        address: body.address ? sanitizeText(body.address, 300) : undefined,
-      },
-      estimatedPrice: body.estimatedPrice,
-      status: INTERVENTION_STATUS.PENDING,
-    });
+    // Build GeoJSON point for client_location
+    const clientLocation = `POINT(${body.lng} ${body.lat})`;
 
-    return jsonOk({ intervention: serializeIntervention(created.toObject()) }, { status: 201 });
+    const { data: created, error: insertError } = await supabase
+      .from("interventions")
+      .insert({
+        client_id: auth.user.id,
+        problem: sanitizeText(body.problem, 1000),
+        client_location: clientLocation,
+        client_address: body.address ? sanitizeText(body.address, 300) : null,
+        estimated_price: body.estimatedPrice ?? null,
+        status: INTERVENTION_STATUS.PENDING,
+      })
+      .select("*, client:users!interventions_client_id_fkey(id, name, phone), pro:users!interventions_pro_id_fkey(id, name, phone, specialty)")
+      .single();
+
+    if (insertError) throw new Error(insertError.message);
+
+    return jsonOk({ intervention: serializeIntervention(created!) }, { status: 201 });
   } catch (err) {
     if (err instanceof ZodError) return fromZodError(err);
     return handleRouteError(err);

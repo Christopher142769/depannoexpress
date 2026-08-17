@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 import { NextResponse } from "next/server";
-import { connectDB } from "@/server/db/mongodb";
-import { User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import type { DbUser } from "@/server/db/types";
 import { passwordSignupSchema } from "@/server/auth/schemas";
 import { normalizeEmail } from "@/server/auth/otp";
 import { hashPassword } from "@/server/auth/password";
@@ -31,24 +31,37 @@ export async function POST(req: Request) {
       );
     }
 
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const existing = await User.findOne({ email });
+    const { data: existing } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single();
+
     if (existing) {
       return jsonError(409, "Un compte existe déjà avec cet email", undefined, "EMAIL_TAKEN");
     }
 
     const passwordHash = await hashPassword(body.password);
-    const userDoc = await User.create({
-      email,
-      name: sanitizeText(body.name, 120),
-      phone: sanitizeOptional(body.phone, 20),
-      role: body.role,
-      passwordHash,
-      isVerified: true,
-    });
+    const { data: userDoc, error: insertError } = await supabase
+      .from("users")
+      .insert({
+        email,
+        name: sanitizeText(body.name, 120),
+        phone: sanitizeOptional(body.phone, 20),
+        role: body.role,
+        password_hash: passwordHash,
+        is_verified: true,
+      })
+      .select("id, email, name, role, phone")
+      .single();
 
-    const user = toAuthUser(userDoc);
+    if (insertError || !userDoc) {
+      throw new Error(insertError?.message ?? "Erreur insertion utilisateur");
+    }
+
+    const user = toAuthUser(userDoc as DbUser);
     const token = await signSession({
       sub: user.id,
       email: user.email,

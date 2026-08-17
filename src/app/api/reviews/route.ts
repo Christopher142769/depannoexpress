@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ZodError } from "zod";
-import { connectDB } from "@/server/db/mongodb";
-import { Intervention, INTERVENTION_STATUS, Review } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import { INTERVENTION_STATUS } from "@/server/db/types";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { fromZodError, handleRouteError, jsonError, jsonOk } from "@/server/api/http";
 import { sanitizeText } from "@/lib/sanitize";
@@ -21,45 +21,67 @@ export async function POST(req: Request) {
     if (forbidden) return forbidden;
 
     const body = schema.parse(await req.json());
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const intervention = await Intervention.findById(body.interventionId);
+    const { data: intervention } = await supabase
+      .from("interventions")
+      .select("id, client_id, pro_id, status")
+      .eq("id", body.interventionId)
+      .single();
+
     if (!intervention) return jsonError(404, "Intervention introuvable");
-    if (intervention.clientId.toString() !== auth.user.id) {
+    if (intervention.client_id !== auth.user.id) {
       return jsonError(403, "Accès refusé");
     }
     if (intervention.status !== INTERVENTION_STATUS.COMPLETED) {
       return jsonError(409, "L'intervention doit être terminée pour laisser un avis");
     }
-    if (!intervention.proId) return jsonError(409, "Aucun dépanneur associé");
+    if (!intervention.pro_id) return jsonError(409, "Aucun dépanneur associé");
 
-    const existing = await Review.findOne({ interventionId: intervention._id });
+    const { data: existing } = await supabase
+      .from("reviews")
+      .select("id")
+      .eq("intervention_id", intervention.id)
+      .limit(1)
+      .single();
+
     if (existing) return jsonError(409, "Un avis existe déjà pour cette intervention");
 
-    const review = await Review.create({
-      interventionId: intervention._id,
-      clientId: auth.user.id,
-      proId: intervention.proId,
-      rating: body.rating,
-      comment: body.comment ? sanitizeText(body.comment, 1000) : undefined,
-    });
+    const { data: review, error: insertError } = await supabase
+      .from("reviews")
+      .insert({
+        intervention_id: intervention.id,
+        client_id: auth.user.id,
+        pro_id: intervention.pro_id,
+        rating: body.rating,
+        comment: body.comment ? sanitizeText(body.comment, 1000) : null,
+      })
+      .select("id, rating, comment, created_at")
+      .single();
 
-    const agg = await Review.aggregate([
-      { $match: { proId: intervention.proId } },
-      { $group: { _id: "$proId", avg: { $avg: "$rating" }, count: { $sum: 1 } } },
-    ]);
+    if (insertError) throw new Error(insertError.message);
+
+    // Compute average rating
+    const { data: aggData } = await supabase
+      .from("reviews")
+      .select("rating")
+      .eq("pro_id", intervention.pro_id);
+
+    const ratings = aggData ?? [];
+    const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / (ratings.length || 1);
 
     return jsonOk(
       {
         review: {
-          id: review._id.toString(),
-          rating: review.rating,
-          comment: review.comment,
-          createdAt: review.createdAt,
+          id: review!.id,
+          rating: review!.rating,
+          comment: review!.comment,
+          createdAt: review!.created_at,
         },
-        proRating: agg[0]
-          ? { average: Math.round(agg[0].avg * 10) / 10, count: agg[0].count }
-          : { average: review.rating, count: 1 },
+        proRating: {
+          average: Math.round(avg * 10) / 10,
+          count: ratings.length,
+        },
       },
       { status: 201 }
     );

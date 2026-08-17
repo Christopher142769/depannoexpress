@@ -1,11 +1,11 @@
-import { Types } from "mongoose";
-import { Wallet, WalletTransaction, WALLET_TX_TYPE } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import { WALLET_TX_TYPE } from "@/server/db/types";
+import type { WalletTxType } from "@/server/db/types";
 import { COMMISSION_RATE_PERCENT } from "@/lib/constants";
 
-/** Crédite le portefeuille pro à la complétion d'une intervention */
 export async function creditProOnCompletion(params: {
-  proId: string | Types.ObjectId;
-  interventionId: string | Types.ObjectId;
+  proId: string;
+  interventionId: string;
   finalPrice: number;
 }) {
   const gross = Math.max(0, Math.round(params.finalPrice));
@@ -13,46 +13,75 @@ export async function creditProOnCompletion(params: {
 
   const commission = Math.round((gross * COMMISSION_RATE_PERCENT) / 100);
   const net = Math.max(0, gross - commission);
-  const proId = new Types.ObjectId(params.proId);
-  const interventionId = new Types.ObjectId(params.interventionId);
+  const supabase = getSupabaseAdmin();
 
-  let wallet = await Wallet.findOne({ userId: proId });
+  // Get or create wallet
+  let { data: wallet } = await supabase
+    .from("wallets")
+    .select("id, balance")
+    .eq("user_id", params.proId)
+    .single();
+
   if (!wallet) {
-    wallet = await Wallet.create({ userId: proId, balance: 0 });
+    const { data: created } = await supabase
+      .from("wallets")
+      .insert({ user_id: params.proId, balance: 0 })
+      .select("id, balance")
+      .single();
+    wallet = created;
   }
 
+  if (!wallet) return null;
+
+  const newBalance = wallet.balance + net;
+
   if (net > 0) {
-    wallet.balance += net;
-    await wallet.save();
-    await WalletTransaction.create({
-      userId: proId,
+    await supabase
+      .from("wallets")
+      .update({ balance: newBalance })
+      .eq("id", wallet.id);
+
+    await supabase.from("wallet_transactions").insert({
+      user_id: params.proId,
       type: WALLET_TX_TYPE.CREDIT,
       amount: net,
-      balanceAfter: wallet.balance,
+      balance_after: newBalance,
       description: "Paiement intervention",
-      interventionId,
+      intervention_id: params.interventionId,
     });
   }
 
   if (commission > 0) {
-    await WalletTransaction.create({
-      userId: proId,
+    await supabase.from("wallet_transactions").insert({
+      user_id: params.proId,
       type: WALLET_TX_TYPE.COMMISSION,
       amount: -commission,
-      balanceAfter: wallet.balance,
+      balance_after: newBalance,
       description: `Commission plateforme (${COMMISSION_RATE_PERCENT}%)`,
-      interventionId,
+      intervention_id: params.interventionId,
     });
   }
 
-  return { net, commission, balance: wallet.balance };
+  return { net, commission, balance: newBalance };
 }
 
-export async function getOrCreateWallet(userId: string | Types.ObjectId) {
-  const id = new Types.ObjectId(userId);
-  let wallet = await Wallet.findOne({ userId: id });
+export async function getOrCreateWallet(userId: string) {
+  const supabase = getSupabaseAdmin();
+
+  let { data: wallet } = await supabase
+    .from("wallets")
+    .select("id, user_id, balance, created_at, updated_at")
+    .eq("user_id", userId)
+    .single();
+
   if (!wallet) {
-    wallet = await Wallet.create({ userId: id, balance: 0 });
+    const { data: created } = await supabase
+      .from("wallets")
+      .insert({ user_id: userId, balance: 0 })
+      .select("id, user_id, balance, created_at, updated_at")
+      .single();
+    wallet = created;
   }
+
   return wallet;
 }

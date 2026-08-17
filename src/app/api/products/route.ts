@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { ZodError } from "zod";
-import { connectDB } from "@/server/db/mongodb";
-import { Product } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
 import { requireSession } from "@/server/auth/guards";
 import { fromZodError, handleRouteError, jsonOk } from "@/server/api/http";
 
@@ -21,27 +20,32 @@ export async function GET(req: Request) {
       q: searchParams.get("q") ?? undefined,
     });
 
-    await connectDB();
-    const filter: Record<string, unknown> = { isActive: true };
-    if (q.category) filter.category = q.category;
+    const supabase = getSupabaseAdmin();
+    let query = supabase
+      .from("products")
+      .select("id, name, description, category, price, stock, image_url")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (q.category) {
+      query = query.eq("category", q.category);
+    }
     if (q.q) {
-      filter.$or = [
-        { name: { $regex: q.q, $options: "i" } },
-        { description: { $regex: q.q, $options: "i" } },
-      ];
+      query = query.or(`name.ilike.%${q.q}%,description.ilike.%${q.q}%`);
     }
 
-    const products = await Product.find(filter).sort({ createdAt: -1 }).limit(100).lean();
+    const { data: products } = await query;
 
     return jsonOk({
-      products: products.map((p) => ({
-        id: p._id.toString(),
+      products: (products ?? []).map((p) => ({
+        id: p.id,
         name: p.name,
         description: p.description,
         category: p.category,
         price: p.price,
         stock: p.stock,
-        imageUrl: p.imageUrl,
+        imageUrl: p.image_url,
       })),
     });
   } catch (err) {

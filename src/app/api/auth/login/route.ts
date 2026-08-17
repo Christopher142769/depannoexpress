@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 import { NextResponse } from "next/server";
-import { connectDB } from "@/server/db/mongodb";
-import { User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import type { DbUser } from "@/server/db/types";
 import { passwordLoginSchema } from "@/server/auth/schemas";
 import { normalizeEmail } from "@/server/auth/otp";
 import { verifyPassword } from "@/server/auth/password";
@@ -37,10 +37,15 @@ export async function POST(req: Request) {
       );
     }
 
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const userDoc = await User.findOne({ email }).select("+passwordHash");
-    if (!userDoc || !userDoc.passwordHash) {
+    const { data: userDoc } = await supabase
+      .from("users")
+      .select("id, email, name, role, phone, password_hash, is_verified")
+      .eq("email", email)
+      .single();
+
+    if (!userDoc || !userDoc.password_hash) {
       return jsonError(401, "Email ou mot de passe incorrect", undefined, "INVALID_CREDENTIALS");
     }
 
@@ -53,17 +58,19 @@ export async function POST(req: Request) {
       );
     }
 
-    const ok = await verifyPassword(body.password, userDoc.passwordHash);
+    const ok = await verifyPassword(body.password, userDoc.password_hash);
     if (!ok) {
       return jsonError(401, "Email ou mot de passe incorrect", undefined, "INVALID_CREDENTIALS");
     }
 
-    if (!userDoc.isVerified) {
-      userDoc.isVerified = true;
-      await userDoc.save();
+    if (!userDoc.is_verified) {
+      await supabase
+        .from("users")
+        .update({ is_verified: true })
+        .eq("id", userDoc.id);
     }
 
-    const user = toAuthUser(userDoc);
+    const user = toAuthUser(userDoc as DbUser);
     const token = await signSession({
       sub: user.id,
       email: user.email,

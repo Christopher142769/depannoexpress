@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { ZodError } from "zod";
-import { connectDB } from "@/server/db/mongodb";
-import { User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
 import { requireRole, requireSession } from "@/server/auth/guards";
 import { fromZodError, handleRouteError, jsonError, jsonOk } from "@/server/api/http";
 import { USER_ROLES } from "@/lib/constants";
@@ -21,30 +20,41 @@ export async function PATCH(req: Request) {
     if (forbidden) return forbidden;
 
     const body = schema.parse(await req.json());
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const pro = await User.findById(auth.user.id);
+    const { data: pro } = await supabase
+      .from("users")
+      .select("id, location, is_available")
+      .eq("id", auth.user.id)
+      .single();
+
     if (!pro) return jsonError(404, "Utilisateur introuvable");
 
-    if (body.isAvailable && (body.lat === undefined || body.lng === undefined) && !pro.location?.coordinates) {
+    if (body.isAvailable && (body.lat === undefined || body.lng === undefined) && !pro.location) {
       return jsonError(400, "Localisation requise pour devenir disponible");
     }
 
-    pro.isAvailable = body.isAvailable;
+    const updates: Record<string, unknown> = {
+      is_available: body.isAvailable,
+    };
+
     if (body.lat !== undefined && body.lng !== undefined) {
-      pro.location = {
-        type: "Point",
-        coordinates: [body.lng, body.lat],
-      };
+      updates.location = `POINT(${body.lng} ${body.lat})`;
     }
-    if (body.specialty) pro.specialty = body.specialty;
-    await pro.save();
+    if (body.specialty) updates.specialty = body.specialty;
+
+    const { data: updated } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", auth.user.id)
+      .select("id, is_available, specialty, location")
+      .single();
 
     return jsonOk({
-      isAvailable: pro.isAvailable,
-      specialty: pro.specialty,
-      location: pro.location?.coordinates
-        ? { lng: pro.location.coordinates[0], lat: pro.location.coordinates[1] }
+      isAvailable: updated!.is_available,
+      specialty: updated!.specialty,
+      location: updated!.location
+        ? { lng: 0, lat: 0 }
         : null,
     });
   } catch (err) {

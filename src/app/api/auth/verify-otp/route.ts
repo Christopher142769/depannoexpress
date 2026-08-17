@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 import { NextResponse } from "next/server";
-import { connectDB } from "@/server/db/mongodb";
-import { OTP, User } from "@/server/db/models";
+import { getSupabaseAdmin } from "@/server/db/supabase";
+import type { DbUser } from "@/server/db/types";
 import { verifyOtpSchema } from "@/server/auth/schemas";
 import { normalizeEmail } from "@/server/auth/otp";
 import { toAuthUser } from "@/server/auth/guards";
@@ -15,10 +15,17 @@ export async function POST(req: Request) {
     const body = verifyOtpSchema.parse(await req.json());
     const email = normalizeEmail(body.email);
 
-    await connectDB();
+    const supabase = getSupabaseAdmin();
 
-    const otp = await OTP.findOne({ email }).sort({ createdAt: -1 });
-    if (!otp || otp.expiresAt.getTime() < Date.now()) {
+    const { data: otp } = await supabase
+      .from("otps")
+      .select("id, code, expires_at, attempts")
+      .eq("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!otp || new Date(otp.expires_at).getTime() < Date.now()) {
       return jsonError(400, "Code expiré ou introuvable. Demandez-en un nouveau.");
     }
 
@@ -27,9 +34,13 @@ export async function POST(req: Request) {
     }
 
     if (otp.code !== body.code) {
-      otp.attempts += 1;
-      await otp.save();
-      const remaining = MAX_ATTEMPTS - otp.attempts;
+      const newAttempts = otp.attempts + 1;
+      await supabase
+        .from("otps")
+        .update({ attempts: newAttempts })
+        .eq("id", otp.id);
+
+      const remaining = MAX_ATTEMPTS - newAttempts;
       return jsonError(
         400,
         remaining > 0
@@ -38,19 +49,27 @@ export async function POST(req: Request) {
       );
     }
 
-    await OTP.deleteMany({ email });
+    // Delete all OTPs for this email
+    await supabase.from("otps").delete().eq("email", email);
 
-    const userDoc = await User.findOne({ email });
+    const { data: userDoc } = await supabase
+      .from("users")
+      .select("id, email, name, role, phone, is_verified")
+      .eq("email", email)
+      .single();
+
     if (!userDoc) {
       return jsonError(404, "Utilisateur introuvable");
     }
 
-    if (!userDoc.isVerified) {
-      userDoc.isVerified = true;
-      await userDoc.save();
+    if (!userDoc.is_verified) {
+      await supabase
+        .from("users")
+        .update({ is_verified: true })
+        .eq("id", userDoc.id);
     }
 
-    const user = toAuthUser(userDoc);
+    const user = toAuthUser(userDoc as DbUser);
     const token = await signSession({
       sub: user.id,
       email: user.email,
