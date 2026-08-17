@@ -60,6 +60,6 @@ export async function apiFetch<T>(
 
     return { ok: true, data };
   } catch {
-    return { ok: false, error: "Erreur réseau — vérifiez EXPO_PUBLIC_API_URL", status: 0 };
+    return { ok: false, error: "Erreur réseau. Vérifiez EXPO_PUBLIC_API_URL", status: 0 };
   }
 }

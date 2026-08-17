@@ -91,9 +91,9 @@ export async function sendOTPEmail(email: string, code: string): Promise<void> {
   const service = createEmailService();
   await service.send({
     to: email,
-    subject: `${code} — Votre code Dépannage Express`,
+    subject: `${code} · Votre code Dépannage Express`,
     html: `
-      <div style="font-family: Inter, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+      <div style="font-family: Montserrat, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
         <h1 style="color: #1E73BE; font-size: 24px;">Dépannage Express</h1>
         <p style="color: #5a6778;">Votre code de vérification :</p>
         <p style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #0E1116;">${code}</p>

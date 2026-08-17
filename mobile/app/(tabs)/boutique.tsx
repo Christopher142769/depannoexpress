@@ -60,7 +60,7 @@ export default function BoutiqueScreen() {
       ListHeaderComponent={
         <View style={styles.header}>
           <Text style={styles.title}>Pièces & accessoires</Text>
-          <Text style={styles.subtitle}>Catalogue — commande bientôt disponible dans l&apos;app</Text>
+          <Text style={styles.subtitle}>Catalogue, commande bientôt disponible dans l&apos;app</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
       }

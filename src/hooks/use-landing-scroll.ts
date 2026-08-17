@@ -9,7 +9,7 @@ type LandingScrollOptions = {
   figureRef: React.RefObject<HTMLElement | null>;
 };
 
-/** Parallax hero + état nav sticky au scroll */
+/** Parallax hero + état nav sticky */
 export function useLandingScroll({
   heroRef,
   heroCopyRef,
@@ -42,7 +42,7 @@ export function useLandingScroll({
 
       const figure = figureRef.current;
       if (figure) {
-        figure.style.transform = `translate3d(0, ${progress * 64}px, 0) scale(${1 - progress * 0.06})`;
+        figure.style.transform = `translate3d(-50%, ${progress * 64}px, 0) scale(${1 - progress * 0.06})`;
         figure.style.opacity = `${1 - progress * 0.3}`;
       }
     };

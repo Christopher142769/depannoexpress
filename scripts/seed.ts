@@ -37,9 +37,13 @@ async function main() {
   } = await import("../src/server/db/models");
   const { USER_ROLES, PRO_SPECIALTIES } = await import("../src/lib/constants");
   const { BOUTIQUE_PRODUCTS } = await import("../src/lib/boutique-products");
+  const { hashPassword } = await import("../src/server/auth/password");
+  const { DEMO_PASSWORD } = await import("../src/lib/demo-accounts");
 
   await connectDB();
   console.log("→ Connexion Mongo OK");
+
+  const passwordHash = await hashPassword(DEMO_PASSWORD);
 
   async function upsertUser(data: {
     email: string;
@@ -55,16 +59,23 @@ async function main() {
       phone: data.phone,
       role: data.role,
       isVerified: true,
+      passwordHash,
       specialty: data.specialty,
       isAvailable: data.isAvailable ?? false,
     };
+    const unset: Record<string, 1> = {};
     if (data.coordinates) {
       update.location = { type: "Point", coordinates: data.coordinates };
+    } else {
+      unset.location = 1;
     }
     return User.findOneAndUpdate(
       { email: data.email },
-      { $set: update },
-      { upsert: true, new: true }
+      {
+        $set: update,
+        ...(Object.keys(unset).length ? { $unset: unset } : {}),
+      },
+      { upsert: true, returnDocument: "after" }
     );
   }
 
@@ -117,14 +128,14 @@ async function main() {
 
   const existing = await Intervention.findOne({
     clientId: client!._id,
-    problem: "Batterie à plat — seed demo",
+    problem: "Batterie à plat, seed demo",
   });
   if (!existing) {
     await Intervention.create({
       clientId: client!._id,
       proId: pro!._id,
       status: INTERVENTION_STATUS.COMPLETED,
-      problem: "Batterie à plat — seed demo",
+      problem: "Batterie à plat, seed demo",
       clientLocation: {
         type: "Point",
         coordinates: [2.392, 6.371],
@@ -136,13 +147,33 @@ async function main() {
     });
   }
 
+  const pending = await Intervention.findOne({
+    clientId: client!._id,
+    problem: "Pneu crevé — démo en attente",
+    status: INTERVENTION_STATUS.PENDING,
+  });
+  if (!pending) {
+    await Intervention.create({
+      clientId: client!._id,
+      status: INTERVENTION_STATUS.PENDING,
+      problem: "Pneu crevé — démo en attente",
+      clientLocation: {
+        type: "Point",
+        coordinates: [2.3885, 6.365],
+        address: "Cotonou, Fidjrossè",
+      },
+      estimatedPrice: 8000,
+    });
+  }
+
   console.log("✓ Seed terminé");
-  console.log("  client:", client!.email);
-  console.log("  pro:   ", pro!.email);
-  console.log("  admin: ", admin!.email);
-  console.log(
-    "Connexion via /login puis OTP (EMAIL_PROVIDER=console → code dans les logs)."
-  );
+  console.log("");
+  console.log(`  Mot de passe démo (tous) : ${DEMO_PASSWORD}`);
+  console.log("  · Utilisateur :", client!.email, "→ /login → /app");
+  console.log("  · Dépanneur  :", pro!.email, "→ /pro/login → /pro");
+  console.log("  · Admin      :", admin!.email, "→ /admin/login → /admin");
+  console.log("");
+  console.log("  Hub démo : http://localhost:3000/demo");
   process.exit(0);
 }
 

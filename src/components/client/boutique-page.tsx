@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { LogoutButton } from "@/components/auth/logout-button";
 import { toast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { formatFCFA } from "@/lib/utils";
@@ -51,23 +49,17 @@ export function BoutiquePage() {
   }, [category, q]);
 
   return (
-    <div className="min-h-screen bg-bg-base pb-20 md:pb-16">
-      <header className="border-b border-border bg-bg-surface/80 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-          <div>
-            <Badge variant="brand">Boutique</Badge>
-            <p className="font-display font-semibold mt-1">Pièces et accessoires</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/app">Retour</Link>
-            </Button>
-            <LogoutButton variant="ghost" />
-          </div>
-        </div>
-      </header>
+    <div className="space-y-6">
+      <div>
+        <p className="font-display text-xl font-semibold tracking-tight">
+          Boutique
+        </p>
+        <p className="text-sm text-text-secondary mt-1">
+          Pièces et accessoires pour reprendre la route.
+        </p>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
             placeholder="Rechercher…"
@@ -123,7 +115,7 @@ export function BoutiquePage() {
             ))}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

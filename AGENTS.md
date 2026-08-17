@@ -13,7 +13,7 @@ Plateforme d’assistance routière au Bénin. Stack : **Next.js 16 (App Router)
 - Maquettes HTML de référence : `design-reference/` (source de vérité visuelle, pas du code app).
 - Couche serveur : `src/server/` (MongoDB, modèles Mongoose, email, temps réel).
 - État client : `src/stores/` (Zustand).
-- Auth **par e-mail uniquement** (OTP) — jamais par SMS.
+- Auth **email + mot de passe** (pas de SMS). Comptes démo : voir `/demo` et `DEMO_PASSWORD`.
 
 ## Règles
 

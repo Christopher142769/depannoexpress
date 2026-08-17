@@ -5,26 +5,38 @@ import {
 } from "@/server/auth/session-token";
 import { USER_ROLES, type UserRole } from "@/lib/constants";
 
-const PROTECTED: { prefix: string; roles: UserRole[]; loginRole: string }[] = [
+/** Routes auth publiques sous préfixes protégés */
+const AUTH_PUBLIC = new Set([
+  "/pro/login",
+  "/pro/signup",
+  "/admin/login",
+]);
+
+const PROTECTED: { prefix: string; roles: UserRole[]; loginPath: string }[] = [
   {
     prefix: "/app",
     roles: [USER_ROLES.CLIENT],
-    loginRole: "client",
+    loginPath: "/login",
   },
   {
     prefix: "/pro",
     roles: [USER_ROLES.PRO],
-    loginRole: "pro",
+    loginPath: "/pro/login",
   },
   {
     prefix: "/admin",
     roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN],
-    loginRole: "client",
+    loginPath: "/admin/login",
   },
 ];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (AUTH_PUBLIC.has(pathname)) {
+    return NextResponse.next();
+  }
+
   const rule = PROTECTED.find(
     (r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`)
   );
@@ -40,16 +52,14 @@ export async function middleware(req: NextRequest) {
 
   if (!session) {
     const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("role", rule.loginRole);
+    url.pathname = rule.loginPath;
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
   if (!rule.roles.includes(session.role)) {
     const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("role", rule.loginRole);
+    url.pathname = rule.loginPath;
     url.searchParams.set("error", "forbidden");
     return NextResponse.redirect(url);
   }

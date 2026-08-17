@@ -1,6 +1,14 @@
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import {
+  Montserrat_400Regular,
+  Montserrat_500Medium,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold,
+  Montserrat_800ExtraBold,
+  useFonts,
+} from "@expo-google-fonts/montserrat";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "@/stores/auth-store";
@@ -11,18 +19,25 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const bootstrap = useAuthStore((s) => s.bootstrap);
   const isReady = useAuthStore((s) => s.isReady);
+  const [fontsLoaded] = useFonts({
+    Montserrat_400Regular,
+    Montserrat_500Medium,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
+    Montserrat_800ExtraBold,
+  });
 
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
 
   useEffect(() => {
-    if (isReady) {
+    if (isReady && fontsLoaded) {
       void SplashScreen.hideAsync();
     }
-  }, [isReady]);
+  }, [isReady, fontsLoaded]);
 
-  if (!isReady) return null;
+  if (!isReady || !fontsLoaded) return null;
 
   return (
     <SafeAreaProvider>

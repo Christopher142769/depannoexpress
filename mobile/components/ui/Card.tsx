@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, type ViewProps } from "react-native";
 import { BRAND } from "@/lib/constants";
+import { FONTS } from "@/lib/fonts";
 
 type Props = ViewProps & {
   title?: string;
@@ -27,11 +28,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
     color: BRAND.gray900,
   },
   subtitle: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: BRAND.gray500,
     marginTop: -4,
   },

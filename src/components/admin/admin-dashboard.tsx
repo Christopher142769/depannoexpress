@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Users, Wrench, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
-import { LogoutButton } from "@/components/auth/logout-button";
 import { toast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
 import { formatFCFA } from "@/lib/utils";
@@ -27,6 +24,22 @@ type UserRow = {
   role: string;
   specialty?: string;
   isAvailable?: boolean;
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "En attente",
+  accepted: "Acceptée",
+  en_route: "En route",
+  in_progress: "En cours",
+  completed: "Terminée",
+  cancelled: "Annulée",
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  client: "Utilisateur",
+  pro: "Dépanneur",
+  admin: "Admin",
+  super_admin: "Super admin",
 };
 
 type InterventionRow = {
@@ -87,23 +100,15 @@ export function AdminDashboard() {
   }, [statusFilter]);
 
   return (
-    <div className="min-h-screen bg-bg-base pb-16">
-      <header className="border-b border-border bg-bg-surface/80 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-          <div>
-            <Badge variant="warning">Administration</Badge>
-            <p className="font-display font-semibold mt-1">Back-office</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/">Accueil</Link>
-            </Button>
-            <LogoutButton variant="outline" />
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <div className="space-y-8">
+      <div>
+        <p className="font-display text-xl font-semibold tracking-tight">
+          Tableau de bord
+        </p>
+        <p className="text-sm text-text-secondary mt-1">
+          Vue d’ensemble des utilisateurs, interventions et revenus plateforme.
+        </p>
+      </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Interventions"
@@ -133,7 +138,7 @@ export function AdminDashboard() {
               onChange={(e) => setRoleFilter(e.target.value)}
             >
               <option value="">Tous les rôles</option>
-              <option value="client">Clients</option>
+              <option value="client">Utilisateurs</option>
               <option value="pro">Dépanneurs</option>
               <option value="admin">Admins</option>
             </select>
@@ -154,7 +159,7 @@ export function AdminDashboard() {
                     <td className="py-2 pr-3 font-medium">{u.name}</td>
                     <td className="py-2 pr-3">{u.email}</td>
                     <td className="py-2 pr-3">
-                      {u.role}
+                      {ROLE_LABEL[u.role] ?? u.role}
                       {u.specialty ? ` · ${u.specialty}` : ""}
                     </td>
                     <td className="py-2">
@@ -162,7 +167,7 @@ export function AdminDashboard() {
                         ? u.isAvailable
                           ? "Disponible"
                           : "Hors ligne"
-                        : "—"}
+                        : "·"}
                     </td>
                   </tr>
                 ))}
@@ -183,12 +188,12 @@ export function AdminDashboard() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">Tous les statuts</option>
-              <option value="pending">pending</option>
-              <option value="accepted">accepted</option>
-              <option value="en_route">en_route</option>
-              <option value="in_progress">in_progress</option>
-              <option value="completed">completed</option>
-              <option value="cancelled">cancelled</option>
+              <option value="pending">En attente</option>
+              <option value="accepted">Acceptée</option>
+              <option value="en_route">En route</option>
+              <option value="in_progress">En cours</option>
+              <option value="completed">Terminée</option>
+              <option value="cancelled">Annulée</option>
             </select>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -211,7 +216,9 @@ export function AdminDashboard() {
                       {new Date(i.createdAt).toLocaleString("fr-BJ")}
                     </p>
                   </div>
-                  <Badge variant="brand">{i.status}</Badge>
+                  <Badge variant="brand">
+                    {STATUS_LABEL[i.status] ?? i.status}
+                  </Badge>
                 </div>
               ))
             )}
@@ -222,7 +229,6 @@ export function AdminDashboard() {
             )}
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

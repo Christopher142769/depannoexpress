@@ -143,7 +143,7 @@ export function LandingPage() {
                   ))}
                   <a href="#pro" onClick={() => setMenuOpen(false)}>Devenir dépanneur</a>
                   <div className="nav-panel-divider" />
-                  <p className="nav-panel-label">Conducteur</p>
+                  <p className="nav-panel-label">Utilisateur</p>
                   <Link href={LANDING_ROUTES.clientSignup} onClick={() => setMenuOpen(false)}>S&apos;inscrire</Link>
                   <Link href={LANDING_ROUTES.clientLogin} onClick={() => setMenuOpen(false)}>Se connecter</Link>
                   <div className="nav-panel-divider" />
@@ -159,22 +159,36 @@ export function LandingPage() {
 
       {/* HERO */}
       <section className="hero" ref={heroRef}>
-        <div className="hero-ambient" aria-hidden="true">
-          <span className="orb orb-a" />
-          <span className="orb orb-b" />
-          <span className="orb orb-c" />
+        <div className="figure-wrap" ref={figureRef}>
+          <Image
+            id="hero-photo"
+            src="/hero-mecano.png"
+            alt="Mécanicien Dépannage Express"
+            fill
+            priority
+            unoptimized
+            sizes="(max-width: 860px) 86vw, 540px"
+            className="object-contain object-bottom"
+          />
         </div>
 
-        <div className="hero-inner">
-          <div className="hero-copy" ref={heroCopyRef}>
+        <div className="hero-content">
+          <div className="hero-left" ref={heroCopyRef}>
             <div className="badge"><span className="dot" /> Disponible 24 h/24</div>
             <h1 className="headline">
               <span className="line"><span>En panne ?</span></span>
               <span className="line"><span>Le dépanneur</span></span>
-              <span className="line"><span>est déjà en route.</span></span>
+              <span className="line">
+                <span>
+                  est <span className="em">déjà en route.</span>
+                </span>
+              </span>
             </h1>
+          </div>
+
+          <div className="hero-right">
             <p className="hero-lead">
-              Mécanicien, vulcanisateur ou électricien automobile —{" "}
+              Mécanicien, vulcanisateur ou électricien automobile,{" "}
               <strong>Dépannage Express</strong> vous connecte au professionnel le plus proche.
               Suivez-le en direct jusqu&apos;à son arrivée.
             </p>
@@ -182,20 +196,6 @@ export function LandingPage() {
               signupHref={LANDING_ROUTES.clientSignup}
               loginHref={LANDING_ROUTES.clientLogin}
             />
-          </div>
-
-          <div className="figure-wrap" ref={figureRef}>
-            <div className="figure-inner">
-              <Image
-                id="hero-photo"
-                src="/hero-mecano.png"
-                alt="Mécanicien Dépannage Express"
-                fill
-                priority
-                sizes="(max-width: 860px) 88vw, 42vw"
-                className="object-contain object-bottom"
-              />
-            </div>
           </div>
         </div>
 
@@ -236,7 +236,7 @@ export function LandingPage() {
       </section>
 
       {/* MÉTIERS */}
-      <section className="section" id="metiers" style={{ paddingTop: 0 }}>
+      <section className="section" id="metiers">
         <div className="wrap">
           <div className="reveal">
             <span className="eyebrow">Nos pros</span>
@@ -265,7 +265,7 @@ export function LandingPage() {
       </section>
 
       {/* SUIVI */}
-      <section className="section" id="suivi" style={{ paddingTop: 0 }}>
+      <section className="section" id="suivi">
         <div className="wrap live">
           <div className="live-text reveal">
             <span className="eyebrow">Suivi en direct</span>
@@ -306,7 +306,7 @@ export function LandingPage() {
       </section>
 
       {/* DÉPANNEURS */}
-      <section className="section" id="pro" style={{ paddingTop: 0 }}>
+      <section className="section" id="pro">
         <div className="wrap">
           <div className="pro-band reveal">
             <div className="pro-grid">
@@ -330,7 +330,7 @@ export function LandingPage() {
       </section>
 
       {/* BOUTIQUE */}
-      <section className="section" id="boutique" style={{ paddingTop: 0 }}>
+      <section className="section" id="boutique">
         <div className="wrap">
           <div className="reveal">
             <span className="eyebrow">La boutique</span>
@@ -367,7 +367,7 @@ export function LandingPage() {
       </section>
 
       {/* STATS + AVIS */}
-      <section className="section section-alt" id="avis" style={{ paddingTop: 0 }}>
+      <section className="section section-alt" id="avis">
         <div className="wrap">
           <div className="stats">
             <div className="stat reveal"><div className="val" data-target="2400" data-suffix="+">0</div><div className="lbl">Interventions réussies</div></div>
@@ -400,7 +400,7 @@ export function LandingPage() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="section" style={{ paddingTop: 0 }}>
+      <section className="section">
         <div className="wrap">
           <div className="final reveal">
             <h2>Prêt à reprendre <span className="em">la route ?</span></h2>
@@ -442,7 +442,7 @@ export function LandingPage() {
               <a href="#boutique">Boutique</a>
             </div>
             <div className="foot-col">
-              <h5>Conducteur</h5>
+              <h5>Utilisateur</h5>
               <Link href={LANDING_ROUTES.clientSignup}>S&apos;inscrire</Link>
               <Link href={LANDING_ROUTES.clientLogin}>Se connecter</Link>
             </div>
@@ -453,7 +453,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="foot-bottom">
-            <span>© {new Date().getFullYear()} Dépannage Express — Tous droits réservés.</span>
+            <span>© {new Date().getFullYear()} Dépannage Express. Tous droits réservés.</span>
             <span>Conçu au Bénin 🇧🇯</span>
           </div>
         </div>

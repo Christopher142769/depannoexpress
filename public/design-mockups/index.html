@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dépannage Express · Propositions design inscription</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --text: #0e1116;
+      --muted: #5a6778;
+      --blue: #1e73be;
+      --line: #d8e0ec;
+      --white: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Montserrat, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 32px 20px 64px;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      letter-spacing: -0.03em;
+      margin: 0 0 8px;
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.55;
+      margin: 0 0 32px;
+      max-width: 52ch;
+    }
+    .option {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 24px rgba(14, 17, 22, 0.06);
+    }
+    .option h2 {
+      margin: 0 0 6px;
+      font-size: 1.25rem;
+      color: var(--blue);
+    }
+    .option p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .option img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #e8eef5;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1.4fr 0.6fr;
+      gap: 14px;
+    }
+    @media (max-width: 800px) {
+      .row { grid-template-columns: 1fr; }
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 8px;
+    }
+    .pick {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="badge">Propositions design</p>
+    <h1>Page d’inscription · Dépannage Express</h1>
+    <p class="lead">
+      Voici les 3 options avec photos de voitures en rotation.
+      Choisis A, B ou C et dis-le moi pour que je l’implémente.
+    </p>
+
+    <section class="option" id="a">
+      <h2>Option A · Split</h2>
+      <p>Photo voiture à gauche (qui change), formulaire à droite. Très lisible, pro, clair.</p>
+      <div class="row">
+        <img src="/design-mockups/rendu-option-a-desktop.png" alt="Option A desktop · split formulaire" />
+        <img src="/design-mockups/rendu-option-a-mobile.png" alt="Option A mobile" />
+      </div>
+      <p class="pick">→ Dis « Option A » pour l’appliquer</p>
+    </section>
+
+    <section class="option" id="b">
+      <h2>Option B · Fond flou</h2>
+      <p>Voiture en arrière-plan flou, carte d’inscription centrée. Plus premium / atmosphère.</p>
+      <img src="/design-mockups/rendu-option-b-desktop.png" alt="Option B desktop · fond flou" />
+      <p class="pick">→ Dis « Option B » pour l’appliquer</p>
+    </section>
+
+    <section class="option" id="c">
+      <h2>Option C · Hero + carte</h2>
+      <p>Grande photo en haut (style landing), formulaire en carte en dessous. Cohérent avec le site.</p>
+      <img src="/design-mockups/rendu-option-c-desktop.png" alt="Option C desktop · hero + carte" />
+      <p class="pick">→ Dis « Option C » pour l’appliquer</p>
+    </section>
+  </div>
+</body>
+</html>

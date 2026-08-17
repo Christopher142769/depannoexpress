@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { LogoutButton } from "@/components/auth/logout-button";
 import { ClientLiveMap } from "@/components/maps/client-live-map";
 import { toast } from "@/components/ui/toast";
 import { apiFetch } from "@/lib/api-client";
@@ -234,20 +233,17 @@ export function ProDashboard() {
   }, [active, coords]);
 
   return (
-    <div className="min-h-screen bg-bg-base pb-20 md:pb-16">
-      <header className="border-b border-border bg-bg-surface/80 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-          <div>
-            <Badge variant="success">Espace Dépanneur</Badge>
-            <p className="font-display font-semibold mt-1">
-              {user?.name ?? "Dépanneur"}
-            </p>
-          </div>
-          <LogoutButton variant="ghost" />
-        </div>
-      </header>
+    <div className="space-y-6">
+      <div>
+        <p className="font-display text-xl font-semibold tracking-tight">
+          {user?.name ?? "Dépanneur"}
+        </p>
+        <p className="text-sm text-text-secondary mt-1">
+          Gérez votre disponibilité, acceptez des missions et suivez votre portefeuille.
+        </p>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Disponibilité</CardTitle>
@@ -436,7 +432,7 @@ export function ProDashboard() {
             </CardContent>
           </Card>
         )}
-      </main>
+      </div>
     </div>
   );
 }

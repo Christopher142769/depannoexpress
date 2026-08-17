@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Providers } from "@/components/layout/providers";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
-import { clashDisplay, satoshi } from "@/lib/fonts";
+import { montserrat } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`h-full ${satoshi.variable} ${clashDisplay.variable}`}
+      className={`h-full ${montserrat.variable}`}
       data-theme="light"
       data-scroll-behavior="smooth"
       suppressHydrationWarning

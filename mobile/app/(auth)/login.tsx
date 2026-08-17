@@ -6,9 +6,14 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { apiFetch } from "@/lib/api";
 import { APP_NAME, BRAND, type UserRole } from "@/lib/constants";
+import { FONTS } from "@/lib/fonts";
+import type { AuthUser } from "@/lib/types";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function LoginScreen() {
+  const setSession = useAuthStore((s) => s.setSession);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("client");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,15 +24,19 @@ export default function LoginScreen() {
     setError(null);
     const trimmed = email.trim().toLowerCase();
     if (!trimmed.includes("@")) {
-      setError("Adresse e-mail invalide");
+      setError("Adresse email invalide");
+      return;
+    }
+    if (!password) {
+      setError("Mot de passe requis");
       return;
     }
 
     setLoading(true);
-    const res = await apiFetch<{ ok: boolean }>("/api/auth/request-otp", {
+    const res = await apiFetch<{ user: AuthUser; token: string }>("/api/auth/login", {
       method: "POST",
       auth: false,
-      body: JSON.stringify({ mode: "login", email: trimmed, role }),
+      body: JSON.stringify({ email: trimmed, password, role }),
     });
     setLoading(false);
 
@@ -36,7 +45,8 @@ export default function LoginScreen() {
       return;
     }
 
-    router.push({ pathname: "/(auth)/otp", params: { email: trimmed } });
+    await setSession(res.data.user, res.data.token);
+    router.replace(res.data.user.role === "pro" ? "/(pro-tabs)" : "/(tabs)");
   };
 
   return (
@@ -50,13 +60,12 @@ export default function LoginScreen() {
           <Text style={styles.tagline}>Assistance routière au Bénin</Text>
         </View>
 
-        {/* Role selector */}
         <View style={styles.roleRow}>
           <Pressable
             style={[styles.roleBtn, !isPro && styles.roleBtnActive]}
             onPress={() => setRole("client")}
           >
-            <Text style={[styles.roleTxt, !isPro && styles.roleTxtActive]}>Conducteur</Text>
+            <Text style={[styles.roleTxt, !isPro && styles.roleTxtActive]}>Utilisateur</Text>
           </Pressable>
           <Pressable
             style={[styles.roleBtn, isPro && styles.roleBtnActivePro]}
@@ -67,20 +76,28 @@ export default function LoginScreen() {
         </View>
 
         <Card
-          title={isPro ? "Connexion dépanneur" : "Connexion conducteur"}
-          subtitle="Code envoyé par e-mail uniquement"
+          title={isPro ? "Connexion dépanneur" : "Connexion utilisateur"}
+          subtitle="Email et mot de passe"
         >
           <Input
-            label="Adresse e-mail"
+            label="Adresse email"
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
             placeholder="vous@exemple.bj"
+          />
+          <Input
+            label="Mot de passe"
+            secureTextEntry
+            autoComplete="password"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
             error={error ?? undefined}
           />
-          <Button title="Recevoir le code" onPress={submit} loading={loading} />
+          <Button title="Se connecter" onPress={submit} loading={loading} />
         </Card>
 
         <Text style={styles.footer}>
@@ -103,8 +120,8 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND.gray100,
   },
   hero: { alignItems: "center", paddingVertical: 12, gap: 4 },
-  brand: { fontSize: 26, fontWeight: "800", color: BRAND.blue },
-  tagline: { fontSize: 14, color: BRAND.gray500 },
+  brand: { fontSize: 26, fontFamily: FONTS.extrabold, color: BRAND.blue },
+  tagline: { fontSize: 14, fontFamily: FONTS.regular, color: BRAND.gray500 },
   roleRow: {
     flexDirection: "row",
     gap: 10,
@@ -118,9 +135,9 @@ const styles = StyleSheet.create({
   },
   roleBtnActive: { backgroundColor: BRAND.blue },
   roleBtnActivePro: { backgroundColor: BRAND.red },
-  roleTxt: { fontSize: 15, fontWeight: "600", color: BRAND.gray500 },
+  roleTxt: { fontSize: 15, fontFamily: FONTS.semibold, color: BRAND.gray500 },
   roleTxtActive: { color: BRAND.white },
   roleTxtActivePro: { color: BRAND.white },
-  footer: { textAlign: "center", color: BRAND.gray500 },
-  link: { color: BRAND.blue, fontWeight: "600" },
+  footer: { textAlign: "center", fontFamily: FONTS.regular, color: BRAND.gray500 },
+  link: { color: BRAND.blue, fontFamily: FONTS.semibold },
 });

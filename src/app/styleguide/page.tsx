@@ -66,7 +66,7 @@ export default function StyleguidePage() {
             Styleguide
           </h1>
           <p className="text-text-secondary">
-            Composants UI de base — Dépannage Express.{" "}
+            Composants UI de base, Dépannage Express.{" "}
             <Link href="/" className="text-brand-blue hover:underline">
               Retour accueil
             </Link>
@@ -99,7 +99,7 @@ export default function StyleguidePage() {
           <div className="space-y-4 rounded-card border border-border p-6 bg-bg-surface">
             <p className="text-hero font-display">Hero Display</p>
             <p className="font-display text-3xl font-bold">Titre Display</p>
-            <p className="text-base">Corps Inter — texte courant lisible.</p>
+            <p className="text-base">Corps Montserrat, texte courant lisible.</p>
             <p className="text-sm text-text-secondary">Texte secondaire</p>
           </div>
         </Section>
@@ -145,9 +145,9 @@ export default function StyleguidePage() {
         </Section>
 
         {/* OTP */}
-        <Section title="OTP Input" description="6 cases — codes envoyés par e-mail uniquement">
+        <Section title="OTP Input" description="6 cases, codes envoyés par email uniquement">
           <OTPInput value={otp} onChange={setOtp} />
-          <p className="mt-2 text-xs text-text-secondary font-mono">Valeur : {otp || "—"}</p>
+          <p className="mt-2 text-xs text-text-secondary font-mono">Valeur : {otp || "·"}</p>
         </Section>
 
         {/* Cards */}
@@ -156,7 +156,7 @@ export default function StyleguidePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Intervention #1247</CardTitle>
-                <CardDescription>Crevaison — Cotonou, Akpakpa</CardDescription>
+                <CardDescription>Crevaison, Cotonou, Akpakpa</CardDescription>
               </CardHeader>
               <CardContent>
                 <Badge variant="urgent">En cours</Badge>

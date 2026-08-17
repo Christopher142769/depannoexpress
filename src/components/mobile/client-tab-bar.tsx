@@ -2,12 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ShoppingBag } from "lucide-react";
+import { Home, ShoppingBag, UserRound } from "lucide-react";
+import { LANDING_ROUTES } from "@/lib/landing-routes";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/app", label: "Accueil", icon: Home, exact: true },
-  { href: "/app/boutique", label: "Boutique", icon: ShoppingBag, exact: false },
+  { href: LANDING_ROUTES.clientApp, label: "Accueil", icon: Home, exact: true },
+  {
+    href: LANDING_ROUTES.clientBoutique,
+    label: "Boutique",
+    icon: ShoppingBag,
+    exact: false,
+  },
+  {
+    href: LANDING_ROUTES.clientProfile,
+    label: "Profil",
+    icon: UserRound,
+    exact: false,
+  },
 ] as const;
 
 export function ClientTabBar() {
@@ -30,10 +42,13 @@ export function ClientTabBar() {
               href={tab.href}
               className={cn(
                 "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
-                active ? "text-brand-blue" : "text-text-secondary"
+                active ? "text-brand-blue" : "text-text-secondary",
               )}
             >
-              <Icon className={cn("h-5 w-5", active && "scale-105")} strokeWidth={active ? 2.4 : 2} />
+              <Icon
+                className={cn("h-5 w-5", active && "scale-105")}
+                strokeWidth={active ? 2.4 : 2}
+              />
               {tab.label}
             </Link>
           );

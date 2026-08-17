@@ -6,11 +6,16 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { apiFetch } from "@/lib/api";
 import { BRAND, type UserRole } from "@/lib/constants";
+import { FONTS } from "@/lib/fonts";
+import type { AuthUser } from "@/lib/types";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function SignupScreen() {
+  const setSession = useAuthStore((s) => s.setSession);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("client");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,17 +30,21 @@ export default function SignupScreen() {
       return;
     }
     if (!trimmedEmail.includes("@")) {
-      setError("Adresse e-mail invalide");
+      setError("Adresse email invalide");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Mot de passe trop court (min. 6 caractères)");
       return;
     }
 
     setLoading(true);
-    const res = await apiFetch<{ ok: boolean }>("/api/auth/request-otp", {
+    const res = await apiFetch<{ user: AuthUser; token: string }>("/api/auth/signup", {
       method: "POST",
       auth: false,
       body: JSON.stringify({
-        mode: "signup",
         email: trimmedEmail,
+        password,
         role,
         name: name.trim(),
         phone: phone.trim() || undefined,
@@ -48,7 +57,8 @@ export default function SignupScreen() {
       return;
     }
 
-    router.push({ pathname: "/(auth)/otp", params: { email: trimmedEmail } });
+    await setSession(res.data.user, res.data.token);
+    router.replace(res.data.user.role === "pro" ? "/(pro-tabs)" : "/(tabs)");
   };
 
   return (
@@ -57,13 +67,12 @@ export default function SignupScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Role selector */}
         <View style={styles.roleRow}>
           <Pressable
             style={[styles.roleBtn, !isPro && styles.roleBtnActive]}
             onPress={() => setRole("client")}
           >
-            <Text style={[styles.roleTxt, !isPro && styles.roleTxtActive]}>Conducteur</Text>
+            <Text style={[styles.roleTxt, !isPro && styles.roleTxtActive]}>Utilisateur</Text>
           </Pressable>
           <Pressable
             style={[styles.roleBtn, isPro && styles.roleBtnActivePro]}
@@ -74,12 +83,12 @@ export default function SignupScreen() {
         </View>
 
         <Card
-          title={isPro ? "Inscription dépanneur" : "Inscription conducteur"}
-          subtitle="Vérification par e-mail"
+          title={isPro ? "Inscription dépanneur" : "Inscription utilisateur"}
+          subtitle="Créez votre compte"
         >
           <Input label="Nom complet" value={name} onChangeText={setName} autoComplete="name" />
           <Input
-            label="E-mail"
+            label="Email"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -92,8 +101,15 @@ export default function SignupScreen() {
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
+          <Input
+            label="Mot de passe"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="password-new"
+          />
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Button title="Continuer" onPress={submit} loading={loading} />
+          <Button title="Créer mon compte" onPress={submit} loading={loading} />
         </Card>
 
         <Text style={styles.footer}>
@@ -125,10 +141,10 @@ const styles = StyleSheet.create({
   },
   roleBtnActive: { backgroundColor: BRAND.blue },
   roleBtnActivePro: { backgroundColor: BRAND.red },
-  roleTxt: { fontSize: 15, fontWeight: "600", color: BRAND.gray500 },
+  roleTxt: { fontSize: 15, fontFamily: FONTS.semibold, color: BRAND.gray500 },
   roleTxtActive: { color: BRAND.white },
   roleTxtActivePro: { color: BRAND.white },
   error: { color: BRAND.red, fontSize: 14 },
-  footer: { textAlign: "center", color: BRAND.gray500 },
-  link: { color: BRAND.blue, fontWeight: "600" },
+  footer: { textAlign: "center", fontFamily: FONTS.regular, color: BRAND.gray500 },
+  link: { color: BRAND.blue, fontFamily: FONTS.semibold },
 });

@@ -9,6 +9,13 @@ import { fromZodError, handleRouteError, jsonError, jsonOk } from "@/server/api/
 import { OTP_EXPIRY_MINUTES } from "@/lib/constants";
 import { sanitizeOptional, sanitizeText } from "@/lib/sanitize";
 
+const ROLE_LABEL: Record<string, string> = {
+  client: "utilisateur",
+  pro: "dépanneur",
+  admin: "administrateur",
+  super_admin: "super administrateur",
+};
+
 export async function POST(req: Request) {
   try {
     const body = requestOtpSchema.parse(await req.json());
@@ -45,12 +52,12 @@ export async function POST(req: Request) {
 
     if (body.mode === "login") {
       if (!existing) {
-        return jsonError(404, "Aucun compte associé à cet e-mail", undefined, "USER_NOT_FOUND");
+        return jsonError(404, "Aucun compte associé à cet email", undefined, "USER_NOT_FOUND");
       }
       if (existing.role !== body.role) {
         return jsonError(
           403,
-          `Ce compte est enregistré en tant que « ${existing.role} », pas « ${body.role} »`,
+          `Ce compte est enregistré en tant que « ${ROLE_LABEL[existing.role] ?? existing.role} », pas « ${ROLE_LABEL[body.role] ?? body.role} »`,
           undefined,
           "ROLE_MISMATCH"
         );
@@ -89,7 +96,7 @@ export async function POST(req: Request) {
 
     return jsonOk({
       ok: true,
-      message: "Code envoyé par e-mail",
+      message: "Code envoyé par email",
       email,
       role: body.role,
     });

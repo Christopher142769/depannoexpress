@@ -5,6 +5,7 @@ export interface IUser extends Document {
   email: string;
   name: string;
   phone?: string;
+  passwordHash?: string;
   role: (typeof USER_ROLES)[keyof typeof USER_ROLES];
   specialty?: (typeof PRO_SPECIALTIES)[keyof typeof PRO_SPECIALTIES];
   avatarUrl?: string;
@@ -23,6 +24,7 @@ const UserSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     name: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },
+    passwordHash: { type: String, select: false },
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
@@ -36,8 +38,8 @@ const UserSchema = new Schema<IUser>(
     isVerified: { type: Boolean, default: false },
     isAvailable: { type: Boolean, default: false },
     location: {
-      type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], default: undefined },
+      type: { type: String, enum: ["Point"] },
+      coordinates: { type: [Number] },
     },
   },
   { timestamps: true }

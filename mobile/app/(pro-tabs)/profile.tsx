@@ -38,7 +38,7 @@ export default function ProProfileScreen() {
 
       <Card title="À propos">
         <Text style={styles.muted}>
-          Version 1.0.0 — Dépannage Express
+          Version 1.0.0 · Dépannage Express
         </Text>
       </Card>
 

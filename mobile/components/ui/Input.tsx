@@ -6,6 +6,7 @@ import {
   type TextInputProps,
 } from "react-native";
 import { BRAND } from "@/lib/constants";
+import { FONTS } from "@/lib/fonts";
 
 type Props = TextInputProps & {
   label?: string;
@@ -32,7 +33,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.semibold,
     color: BRAND.gray900,
   },
   input: {
@@ -43,6 +44,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: BRAND.gray900,
   },
   inputError: {
@@ -50,6 +52,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 13,
+    fontFamily: FONTS.regular,
     color: BRAND.red,
   },
 });

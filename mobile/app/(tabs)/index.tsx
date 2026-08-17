@@ -102,7 +102,7 @@ export default function HomeScreen() {
     }
 
     setProblem("");
-    setMessage("Demande envoyée — un dépanneur va être alerté.");
+    setMessage("Demande envoyée. Un dépanneur va être alerté.");
     await load();
   };
 

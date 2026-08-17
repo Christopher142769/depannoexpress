@@ -65,7 +65,7 @@ export default function OtpScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Card
           title="Code de vérification"
-          subtitle={`Envoyé à ${email ?? "votre e-mail"}. Consultez votre boîte mail.`}
+          subtitle={`Envoyé à ${email ?? "votre email"}. Consultez votre boîte mail.`}
         >
           <Input
             label="Code à 6 chiffres"

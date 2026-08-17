@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { LogoutButton } from "@/components/auth/logout-button";
 import { ClientLiveMap } from "@/components/maps/client-live-map";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { toast } from "@/components/ui/toast";
@@ -260,28 +259,25 @@ export function ClientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-base pb-20 md:pb-16">
-      <header className="border-b border-border bg-bg-surface/80 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-          <div>
-            <Badge variant="brand">Espace Client</Badge>
-            <p className="font-display font-semibold mt-1">
-              Bonjour{user?.name ? `, ${user.name}` : ""}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
-              <Link href="/app/boutique">
-                <ShoppingBag className="h-4 w-4" />
-                Boutique
-              </Link>
-            </Button>
-            <LogoutButton variant="ghost" />
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <p className="font-display text-xl font-semibold tracking-tight">
+            Bonjour{user?.name ? `, ${user.name}` : ""}
+          </p>
+          <p className="text-sm text-text-secondary mt-1">
+            Signalez une panne ou suivez une intervention en cours.
+          </p>
         </div>
-      </header>
+        <Button variant="outline" size="sm" asChild className="w-fit">
+          <Link href="/app/boutique">
+            <ShoppingBag className="h-4 w-4" />
+            Boutique
+          </Link>
+        </Button>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -449,7 +445,7 @@ export function ClientDashboard() {
             )}
           </CardContent>
         </Card>
-      </main>
+      </div>
     </div>
   );
 }

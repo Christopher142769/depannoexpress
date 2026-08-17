@@ -6,6 +6,7 @@ import {
   type PressableProps,
 } from "react-native";
 import { BRAND } from "@/lib/constants";
+import { FONTS } from "@/lib/fonts";
 
 type Props = PressableProps & {
   title: string;
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.semibold,
   },
   labelPrimary: {
     color: BRAND.white,
